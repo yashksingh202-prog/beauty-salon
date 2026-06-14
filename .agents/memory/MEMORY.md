@@ -1,0 +1,2 @@
+- [Orval hook calling convention](orval-hook-convention.md) — query hooks take params as 1st arg, options as 2nd; do NOT wrap params in `{ query: {...} }`
+- [StoryQuest backend patterns](storyquest-backend.md) — parseInt(String(req.params.x)) required; requireAuth/requireAdmin return Promise<void>; nanoid installed on api-server

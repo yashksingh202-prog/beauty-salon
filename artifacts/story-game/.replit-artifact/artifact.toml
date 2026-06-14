@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AI Story Adventure Game"
+version = "1.0.0"
+id = "artifacts/story-game"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22445
+
+[services.development]
+run = "pnpm --filter @workspace/story-game run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/story-game", "run", "build" ]
+publicDir = "artifacts/story-game/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22445"
+BASE_PATH = "/"

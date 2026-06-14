@@ -1,0 +1,154 @@
+@layer theme, base, clerk, components, utilities;
+@import 'tailwindcss';
+@import '@clerk/themes/shadcn.css';
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-sq-purple: #4A1C82;
+  --color-sq-purple-dark: #1E0B36;
+  --color-sq-gold: #FFDF73;
+  --color-sq-gold-dark: #C69320;
+  --color-sq-blue: #0A192F;
+}
+
+:root {
+  --background: 265 85% 5%; /* Very dark midnight blue/purple */
+  --foreground: 0 0% 98%;
+
+  --card: 265 50% 10%;
+  --card-foreground: 0 0% 98%;
+  --card-border: 265 50% 20%;
+
+  --popover: 265 50% 10%;
+  --popover-foreground: 0 0% 98%;
+  --popover-border: 265 50% 20%;
+
+  --primary: 46 100% 65%; /* Rich gold */
+  --primary-foreground: 265 85% 5%;
+  --primary-border: 46 100% 55%;
+
+  --secondary: 270 65% 30%; /* Deep purple */
+  --secondary-foreground: 0 0% 98%;
+  --secondary-border: 270 65% 40%;
+
+  --muted: 265 30% 15%;
+  --muted-foreground: 265 20% 65%;
+  --muted-border: 265 30% 25%;
+
+  --accent: 270 65% 30%;
+  --accent-foreground: 0 0% 98%;
+  --accent-border: 270 65% 40%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --destructive-border: 0 84% 50%;
+
+  --border: 265 50% 20%;
+  --input: 265 50% 15%;
+  --ring: 46 100% 65%;
+
+  --radius: 0.5rem;
+  --app-font-sans: 'Inter', sans-serif;
+  --app-font-serif: Georgia, serif;
+  --app-font-mono: Menlo, monospace;
+}
+
+.dark {
+  /* Same as root since it's forced dark */
+  --background: 265 85% 5%; 
+  --foreground: 0 0% 98%;
+  --card: 265 50% 10%;
+  --card-foreground: 0 0% 98%;
+  --card-border: 265 50% 20%;
+  --popover: 265 50% 10%;
+  --popover-foreground: 0 0% 98%;
+  --popover-border: 265 50% 20%;
+  --primary: 46 100% 65%;
+  --primary-foreground: 265 85% 5%;
+  --primary-border: 46 100% 55%;
+  --secondary: 270 65% 30%;
+  --secondary-foreground: 0 0% 98%;
+  --secondary-border: 270 65% 40%;
+  --muted: 265 30% 15%;
+  --muted-foreground: 265 20% 65%;
+  --muted-border: 265 30% 25%;
+  --accent: 270 65% 30%;
+  --accent-foreground: 0 0% 98%;
+  --accent-border: 270 65% 40%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --destructive-border: 0 84% 50%;
+  --border: 265 50% 20%;
+  --input: 265 50% 15%;
+  --ring: 46 100% 65%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-premium {
+    background: linear-gradient(135deg, var(--color-sq-purple-dark) 0%, var(--color-sq-purple) 50%, var(--color-sq-blue) 100%);
+  }
+  .text-gradient-gold {
+    background: linear-gradient(to right, var(--color-sq-gold), #FFF, var(--color-sq-gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .border-glow-gold {
+    box-shadow: 0 0 10px rgba(255, 223, 115, 0.3), inset 0 0 10px rgba(255, 223, 115, 0.1);
+    border-color: rgba(255, 223, 115, 0.5);
+  }
+}

@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AI Story Adventure Game API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: users
+  - name: stories
+  - name: gameplay
+  - name: rewards
+  - name: leaderboard
+  - name: referrals
+  - name: premium
+  - name: inventory
+  - name: bosses
+  - name: events
+  - name: withdrawals
+  - name: admin
+  - name: analytics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,966 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── USERS ──────────────────────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMyProfile
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    patch:
+      operationId: updateMyProfile
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileUpdate"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users/me/stats:
+    get:
+      operationId: getMyStats
+      tags: [users]
+      summary: Get current user game stats
+      responses:
+        "200":
+          description: User stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStats"
+
+  /users/me/sync:
+    post:
+      operationId: syncUser
+      tags: [users]
+      summary: Sync Clerk user into the game database (JIT provision)
+      responses:
+        "200":
+          description: Synced user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  # ── STORIES / LEVELS ───────────────────────────────────────────────────────
+  /stories:
+    get:
+      operationId: listStories
+      tags: [stories]
+      summary: List story levels
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated story list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryListResponse"
+    post:
+      operationId: createStory
+      tags: [stories]
+      summary: Create a new story level (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryInput"
+      responses:
+        "201":
+          description: Created story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+
+  /stories/{id}:
+    get:
+      operationId: getStory
+      tags: [stories]
+      summary: Get a story level by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Story details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+    patch:
+      operationId: updateStory
+      tags: [stories]
+      summary: Update a story level (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryUpdate"
+      responses:
+        "200":
+          description: Updated story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+    delete:
+      operationId: deleteStory
+      tags: [stories]
+      summary: Delete a story level (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+
+  /stories/{id}/generate:
+    post:
+      operationId: generateStoryContent
+      tags: [stories]
+      summary: AI-generate story content for a level
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Generated story content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryContent"
+
+  # ── GAMEPLAY ───────────────────────────────────────────────────────────────
+  /gameplay/progress:
+    get:
+      operationId: getProgress
+      tags: [gameplay]
+      summary: Get current user progress across all levels
+      responses:
+        "200":
+          description: User progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProgress"
+
+  /gameplay/levels/{storyId}/start:
+    post:
+      operationId: startLevel
+      tags: [gameplay]
+      summary: Start playing a story level
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameSession"
+
+  /gameplay/levels/{storyId}/complete:
+    post:
+      operationId: completeLevel
+      tags: [gameplay]
+      summary: Complete a story level and claim rewards
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LevelCompleteInput"
+      responses:
+        "200":
+          description: Completion result with rewards
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LevelCompleteResult"
+
+  /gameplay/choices:
+    post:
+      operationId: makeChoice
+      tags: [gameplay]
+      summary: Make a story choice and get AI-generated continuation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChoiceInput"
+      responses:
+        "200":
+          description: AI-generated story continuation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryContinuation"
+
+  # ── REWARDS ────────────────────────────────────────────────────────────────
+  /rewards/daily:
+    get:
+      operationId: getDailyRewardStatus
+      tags: [rewards]
+      summary: Get daily reward status and streak
+      responses:
+        "200":
+          description: Daily reward status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyRewardStatus"
+
+  /rewards/daily/claim:
+    post:
+      operationId: claimDailyReward
+      tags: [rewards]
+      summary: Claim today's daily reward
+      responses:
+        "200":
+          description: Claimed reward
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyRewardClaim"
+
+  /rewards/spin:
+    get:
+      operationId: getSpinStatus
+      tags: [rewards]
+      summary: Get lucky spin status (available spins, prizes)
+      responses:
+        "200":
+          description: Spin status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpinStatus"
+
+  /rewards/spin/execute:
+    post:
+      operationId: executeSpin
+      tags: [rewards]
+      summary: Execute a lucky spin
+      responses:
+        "200":
+          description: Spin result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpinResult"
+
+  /rewards/ad-watch:
+    post:
+      operationId: recordAdWatch
+      tags: [rewards]
+      summary: Record a rewarded ad watch and grant reward
+      responses:
+        "200":
+          description: Ad reward granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdReward"
+
+  # ── LEADERBOARD ────────────────────────────────────────────────────────────
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get global leaderboard
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [alltime, weekly, monthly]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardResponse"
+
+  /leaderboard/me:
+    get:
+      operationId: getMyLeaderboardPosition
+      tags: [leaderboard]
+      summary: Get current user's leaderboard rank
+      responses:
+        "200":
+          description: My rank info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardRank"
+
+  # ── REFERRALS ──────────────────────────────────────────────────────────────
+  /referrals/code:
+    get:
+      operationId: getReferralCode
+      tags: [referrals]
+      summary: Get current user's referral code
+      responses:
+        "200":
+          description: Referral code and stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralInfo"
+
+  /referrals/use:
+    post:
+      operationId: useReferralCode
+      tags: [referrals]
+      summary: Use a referral code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReferralCodeInput"
+      responses:
+        "200":
+          description: Referral applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralResult"
+
+  # ── PREMIUM ────────────────────────────────────────────────────────────────
+  /premium/status:
+    get:
+      operationId: getPremiumStatus
+      tags: [premium]
+      summary: Get current user's premium membership status
+      responses:
+        "200":
+          description: Premium status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PremiumStatus"
+
+  /premium/plans:
+    get:
+      operationId: getPremiumPlans
+      tags: [premium]
+      summary: Get available premium plans
+      responses:
+        "200":
+          description: Premium plans list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PremiumPlan"
+
+  # ── INVENTORY ──────────────────────────────────────────────────────────────
+  /inventory:
+    get:
+      operationId: getInventory
+      tags: [inventory]
+      summary: Get current user's inventory
+      responses:
+        "200":
+          description: Inventory items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryResponse"
+
+  /inventory/{itemId}/equip:
+    post:
+      operationId: equipItem
+      tags: [inventory]
+      summary: Equip an inventory item
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Equipped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+
+  # ── BOSS BATTLES ───────────────────────────────────────────────────────────
+  /bosses:
+    get:
+      operationId: listBosses
+      tags: [bosses]
+      summary: List available boss battles
+      responses:
+        "200":
+          description: Boss list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Boss"
+
+  /bosses/{id}/battle:
+    post:
+      operationId: startBossBattle
+      tags: [bosses]
+      summary: Start a boss battle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Battle result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BattleResult"
+
+  # ── EVENTS ─────────────────────────────────────────────────────────────────
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List active game events
+      responses:
+        "200":
+          description: Events list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameEvent"
+
+  /events/{id}/join:
+    post:
+      operationId: joinEvent
+      tags: [events]
+      summary: Join a game event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Joined event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventParticipation"
+
+  # ── WITHDRAWALS ────────────────────────────────────────────────────────────
+  /withdrawals:
+    get:
+      operationId: listMyWithdrawals
+      tags: [withdrawals]
+      summary: List current user's withdrawal requests
+      responses:
+        "200":
+          description: Withdrawals list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Withdrawal"
+    post:
+      operationId: createWithdrawal
+      tags: [withdrawals]
+      summary: Create a withdrawal request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawalInput"
+      responses:
+        "201":
+          description: Withdrawal created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Withdrawal"
+
+  # ── ADMIN ──────────────────────────────────────────────────────────────────
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [admin]
+      summary: List all users (admin)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, banned, premium]
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserListResponse"
+
+  /admin/users/{id}:
+    get:
+      operationId: adminGetUser
+      tags: [admin]
+      summary: Get user details (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetail"
+
+  /admin/users/{id}/ban:
+    post:
+      operationId: adminBanUser
+      tags: [admin]
+      summary: Ban a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BanInput"
+      responses:
+        "200":
+          description: User banned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetail"
+
+  /admin/users/{id}/unban:
+    post:
+      operationId: adminUnbanUser
+      tags: [admin]
+      summary: Unban a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User unbanned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetail"
+
+  /admin/users/{id}/adjust-balance:
+    post:
+      operationId: adminAdjustBalance
+      tags: [admin]
+      summary: Adjust user coin/gem balance (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BalanceAdjustInput"
+      responses:
+        "200":
+          description: Balance adjusted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetail"
+
+  /admin/withdrawals:
+    get:
+      operationId: adminListWithdrawals
+      tags: [admin]
+      summary: List all withdrawal requests (admin)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: All withdrawals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminWithdrawalListResponse"
+
+  /admin/withdrawals/{id}/approve:
+    post:
+      operationId: adminApproveWithdrawal
+      tags: [admin]
+      summary: Approve a withdrawal request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Withdrawal"
+
+  /admin/withdrawals/{id}/reject:
+    post:
+      operationId: adminRejectWithdrawal
+      tags: [admin]
+      summary: Reject a withdrawal request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectInput"
+      responses:
+        "200":
+          description: Rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Withdrawal"
+
+  /admin/rewards:
+    get:
+      operationId: adminListRewards
+      tags: [admin]
+      summary: List all reward configurations (admin)
+      responses:
+        "200":
+          description: Rewards list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RewardConfig"
+    post:
+      operationId: adminCreateReward
+      tags: [admin]
+      summary: Create reward configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RewardConfigInput"
+      responses:
+        "201":
+          description: Created reward config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RewardConfig"
+
+  /admin/rewards/{id}:
+    patch:
+      operationId: adminUpdateReward
+      tags: [admin]
+      summary: Update reward configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RewardConfigUpdate"
+      responses:
+        "200":
+          description: Updated reward config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RewardConfig"
+    delete:
+      operationId: adminDeleteReward
+      tags: [admin]
+      summary: Delete reward configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+
+  /admin/ads:
+    get:
+      operationId: adminListAds
+      tags: [admin]
+      summary: List ad configurations
+      responses:
+        "200":
+          description: Ads list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdConfig"
+    post:
+      operationId: adminCreateAd
+      tags: [admin]
+      summary: Create ad configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdConfigInput"
+      responses:
+        "201":
+          description: Created ad
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdConfig"
+
+  /admin/ads/{id}:
+    patch:
+      operationId: adminUpdateAd
+      tags: [admin]
+      summary: Update ad configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdConfigUpdate"
+      responses:
+        "200":
+          description: Updated ad config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdConfig"
+
+  /admin/events:
+    get:
+      operationId: adminListEvents
+      tags: [admin]
+      summary: List all events (admin)
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameEvent"
+    post:
+      operationId: adminCreateEvent
+      tags: [admin]
+      summary: Create a game event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameEventInput"
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameEvent"
+
+  # ── ANALYTICS ──────────────────────────────────────────────────────────────
+  /analytics/dashboard:
+    get:
+      operationId: getAnalyticsDashboard
+      tags: [analytics]
+      summary: Get admin analytics dashboard summary
+      responses:
+        "200":
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsDashboard"
+
+  /analytics/revenue:
+    get:
+      operationId: getRevenueAnalytics
+      tags: [analytics]
+      summary: Get revenue analytics over time
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+      responses:
+        "200":
+          description: Revenue data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueAnalytics"
+
+  /analytics/users:
+    get:
+      operationId: getUserAnalytics
+      tags: [analytics]
+      summary: Get user growth and activity analytics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+      responses:
+        "200":
+          description: User analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserAnalytics"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +1002,1008 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    DeleteResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required: [success]
+
+    # ── USER ──────────────────────────────────────────────────────────────────
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        clerkId:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        coins:
+          type: integer
+        gems:
+          type: integer
+        level:
+          type: integer
+        xp:
+          type: integer
+        role:
+          type: string
+          enum: [user, moderator, admin, superadmin]
+        isPremium:
+          type: boolean
+        isBanned:
+          type: boolean
+        referralCode:
+          type: string
+        createdAt:
+          type: string
+      required: [id, clerkId, username, email, coins, gems, level, xp, role, isPremium, isBanned, referralCode, createdAt]
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        username:
+          type: string
+        avatarUrl:
+          type: string
+
+    UserStats:
+      type: object
+      properties:
+        totalLevelsCompleted:
+          type: integer
+        totalStoriesRead:
+          type: integer
+        totalCoinsEarned:
+          type: integer
+        totalGemsEarned:
+          type: integer
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+        bossesDefeated:
+          type: integer
+        eventsParticipated:
+          type: integer
+        totalSpins:
+          type: integer
+        referralCount:
+          type: integer
+      required: [totalLevelsCompleted, totalStoriesRead, totalCoinsEarned, totalGemsEarned, currentStreak, longestStreak, bossesDefeated, eventsParticipated, totalSpins, referralCount]
+
+    # ── STORY ─────────────────────────────────────────────────────────────────
+    Story:
+      type: object
+      properties:
+        id:
+          type: integer
+        levelNumber:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard, legendary]
+        coinsReward:
+          type: integer
+        gemsReward:
+          type: integer
+        xpReward:
+          type: integer
+        isPremium:
+          type: boolean
+        isPublished:
+          type: boolean
+        thumbnailUrl:
+          type: ["string", "null"]
+        estimatedMinutes:
+          type: integer
+        storyContent:
+          type: ["string", "null"]
+        choices:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/StoryChoice"
+        createdAt:
+          type: string
+      required: [id, levelNumber, title, description, category, difficulty, coinsReward, gemsReward, xpReward, isPremium, isPublished, estimatedMinutes, createdAt]
+
+    StoryChoice:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        consequence:
+          type: string
+      required: [id, text, consequence]
+
+    StoryListResponse:
+      type: object
+      properties:
+        stories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Story"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+      required: [stories, total, page, totalPages]
+
+    StoryInput:
+      type: object
+      properties:
+        levelNumber:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard, legendary]
+        coinsReward:
+          type: integer
+        gemsReward:
+          type: integer
+        xpReward:
+          type: integer
+        isPremium:
+          type: boolean
+        estimatedMinutes:
+          type: integer
+      required: [levelNumber, title, description, category, difficulty, coinsReward, gemsReward, xpReward, isPremium, estimatedMinutes]
+
+    StoryUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard, legendary]
+        coinsReward:
+          type: integer
+        gemsReward:
+          type: integer
+        xpReward:
+          type: integer
+        isPremium:
+          type: boolean
+        isPublished:
+          type: boolean
+        estimatedMinutes:
+          type: integer
+
+    StoryContent:
+      type: object
+      properties:
+        storyId:
+          type: integer
+        content:
+          type: string
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoryChoice"
+      required: [storyId, content, choices]
+
+    # ── GAMEPLAY ──────────────────────────────────────────────────────────────
+    UserProgress:
+      type: object
+      properties:
+        completedLevels:
+          type: array
+          items:
+            type: integer
+        currentLevel:
+          type: integer
+        totalLevels:
+          type: integer
+        progressPercent:
+          type: number
+      required: [completedLevels, currentLevel, totalLevels, progressPercent]
+
+    GameSession:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        storyId:
+          type: integer
+        startedAt:
+          type: string
+        initialContent:
+          type: string
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoryChoice"
+      required: [sessionId, storyId, startedAt, initialContent, choices]
+
+    LevelCompleteInput:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        score:
+          type: integer
+        timeTaken:
+          type: integer
+      required: [sessionId, score]
+
+    LevelCompleteResult:
+      type: object
+      properties:
+        coinsEarned:
+          type: integer
+        gemsEarned:
+          type: integer
+        xpEarned:
+          type: integer
+        newLevel:
+          type: integer
+        leveledUp:
+          type: boolean
+        newBadges:
+          type: array
+          items:
+            type: string
+        newUserBalance:
+          $ref: "#/components/schemas/UserBalance"
+      required: [coinsEarned, gemsEarned, xpEarned, newLevel, leveledUp, newBadges, newUserBalance]
+
+    UserBalance:
+      type: object
+      properties:
+        coins:
+          type: integer
+        gems:
+          type: integer
+        xp:
+          type: integer
+        level:
+          type: integer
+      required: [coins, gems, xp, level]
+
+    ChoiceInput:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        choiceId:
+          type: string
+        storyId:
+          type: integer
+      required: [sessionId, choiceId, storyId]
+
+    StoryContinuation:
+      type: object
+      properties:
+        content:
+          type: string
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoryChoice"
+        isEnding:
+          type: boolean
+      required: [content, choices, isEnding]
+
+    # ── REWARDS ───────────────────────────────────────────────────────────────
+    DailyRewardStatus:
+      type: object
+      properties:
+        canClaim:
+          type: boolean
+        streak:
+          type: integer
+        nextClaimAt:
+          type: ["string", "null"]
+        weekSchedule:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyRewardDay"
+      required: [canClaim, streak, weekSchedule]
+
+    DailyRewardDay:
+      type: object
+      properties:
+        day:
+          type: integer
+        coins:
+          type: integer
+        gems:
+          type: integer
+        isClaimed:
+          type: boolean
+        isToday:
+          type: boolean
+      required: [day, coins, gems, isClaimed, isToday]
+
+    DailyRewardClaim:
+      type: object
+      properties:
+        coinsEarned:
+          type: integer
+        gemsEarned:
+          type: integer
+        streak:
+          type: integer
+        newBalance:
+          $ref: "#/components/schemas/UserBalance"
+      required: [coinsEarned, gemsEarned, streak, newBalance]
+
+    SpinStatus:
+      type: object
+      properties:
+        freeSpinsAvailable:
+          type: integer
+        paidSpinCost:
+          type: integer
+        prizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpinPrize"
+      required: [freeSpinsAvailable, paidSpinCost, prizes]
+
+    SpinPrize:
+      type: object
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        type:
+          type: string
+          enum: [coins, gems, item, multiplier, miss]
+        value:
+          type: integer
+        probability:
+          type: number
+        color:
+          type: string
+      required: [id, label, type, value, probability, color]
+
+    SpinResult:
+      type: object
+      properties:
+        prizeIndex:
+          type: integer
+        prize:
+          $ref: "#/components/schemas/SpinPrize"
+        newBalance:
+          $ref: "#/components/schemas/UserBalance"
+      required: [prizeIndex, prize, newBalance]
+
+    AdReward:
+      type: object
+      properties:
+        coinsEarned:
+          type: integer
+        gemsEarned:
+          type: integer
+        newBalance:
+          $ref: "#/components/schemas/UserBalance"
+      required: [coinsEarned, gemsEarned, newBalance]
+
+    # ── LEADERBOARD ───────────────────────────────────────────────────────────
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: integer
+        username:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        score:
+          type: integer
+        level:
+          type: integer
+        isPremium:
+          type: boolean
+      required: [rank, userId, username, score, level, isPremium]
+
+    LeaderboardResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+        type:
+          type: string
+        updatedAt:
+          type: string
+      required: [entries, type, updatedAt]
+
+    LeaderboardRank:
+      type: object
+      properties:
+        rank:
+          type: integer
+        score:
+          type: integer
+        totalPlayers:
+          type: integer
+      required: [rank, score, totalPlayers]
+
+    # ── REFERRALS ─────────────────────────────────────────────────────────────
+    ReferralInfo:
+      type: object
+      properties:
+        code:
+          type: string
+        totalReferrals:
+          type: integer
+        totalCoinsEarned:
+          type: integer
+        referrals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferralEntry"
+      required: [code, totalReferrals, totalCoinsEarned, referrals]
+
+    ReferralEntry:
+      type: object
+      properties:
+        username:
+          type: string
+        joinedAt:
+          type: string
+        coinsEarned:
+          type: integer
+      required: [username, joinedAt, coinsEarned]
+
+    ReferralCodeInput:
+      type: object
+      properties:
+        code:
+          type: string
+      required: [code]
+
+    ReferralResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        coinsEarned:
+          type: integer
+        message:
+          type: string
+      required: [success, message]
+
+    # ── PREMIUM ───────────────────────────────────────────────────────────────
+    PremiumStatus:
+      type: object
+      properties:
+        isPremium:
+          type: boolean
+        planId:
+          type: ["integer", "null"]
+        planName:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+        features:
+          type: array
+          items:
+            type: string
+      required: [isPremium, features]
+
+    PremiumPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        durationDays:
+          type: integer
+        gemsBonus:
+          type: integer
+        coinsBonus:
+          type: integer
+        features:
+          type: array
+          items:
+            type: string
+      required: [id, name, price, currency, durationDays, gemsBonus, coinsBonus, features]
+
+    # ── INVENTORY ─────────────────────────────────────────────────────────────
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [avatar, badge, powerup, cosmetic]
+        imageUrl:
+          type: ["string", "null"]
+        isEquipped:
+          type: boolean
+        acquiredAt:
+          type: string
+      required: [id, name, description, type, isEquipped, acquiredAt]
+
+    InventoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InventoryItem"
+        equippedItemIds:
+          type: array
+          items:
+            type: integer
+      required: [items, equippedItemIds]
+
+    # ── BOSSES ────────────────────────────────────────────────────────────────
+    Boss:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum: [normal, hard, extreme, legendary]
+        hp:
+          type: integer
+        coinsReward:
+          type: integer
+        gemsReward:
+          type: integer
+        imageUrl:
+          type: ["string", "null"]
+        isDefeated:
+          type: boolean
+        cooldownUntil:
+          type: ["string", "null"]
+      required: [id, name, description, difficulty, hp, coinsReward, gemsReward, isDefeated]
+
+    BattleResult:
+      type: object
+      properties:
+        won:
+          type: boolean
+        damageDealt:
+          type: integer
+        coinsEarned:
+          type: integer
+        gemsEarned:
+          type: integer
+        xpEarned:
+          type: integer
+        newBalance:
+          $ref: "#/components/schemas/UserBalance"
+      required: [won, damageDealt, coinsEarned, gemsEarned, xpEarned, newBalance]
+
+    # ── EVENTS ────────────────────────────────────────────────────────────────
+    GameEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [story, battle, challenge, seasonal]
+        status:
+          type: string
+          enum: [upcoming, active, ended]
+        startAt:
+          type: string
+        endAt:
+          type: string
+        coinsReward:
+          type: integer
+        gemsReward:
+          type: integer
+        imageUrl:
+          type: ["string", "null"]
+        participantCount:
+          type: integer
+        isParticipating:
+          type: boolean
+      required: [id, name, description, type, status, startAt, endAt, coinsReward, gemsReward, participantCount, isParticipating]
+
+    GameEventInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [story, battle, challenge, seasonal]
+        startAt:
+          type: string
+        endAt:
+          type: string
+        coinsReward:
+          type: integer
+        gemsReward:
+          type: integer
+      required: [name, description, type, startAt, endAt, coinsReward, gemsReward]
+
+    EventParticipation:
+      type: object
+      properties:
+        eventId:
+          type: integer
+        joinedAt:
+          type: string
+        status:
+          type: string
+      required: [eventId, joinedAt, status]
+
+    # ── WITHDRAWALS ───────────────────────────────────────────────────────────
+    Withdrawal:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        amount:
+          type: number
+        currency:
+          type: string
+        method:
+          type: string
+        accountDetails:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        adminNote:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        processedAt:
+          type: ["string", "null"]
+      required: [id, userId, amount, currency, method, accountDetails, status, createdAt]
+
+    WithdrawalInput:
+      type: object
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+        method:
+          type: string
+        accountDetails:
+          type: string
+      required: [amount, currency, method, accountDetails]
+
+    # ── ADMIN ─────────────────────────────────────────────────────────────────
+    AdminUserDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        clerkId:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        coins:
+          type: integer
+        gems:
+          type: integer
+        level:
+          type: integer
+        xp:
+          type: integer
+        role:
+          type: string
+          enum: [user, moderator, admin, superadmin]
+        isPremium:
+          type: boolean
+        isBanned:
+          type: boolean
+        banReason:
+          type: ["string", "null"]
+        referralCode:
+          type: string
+        totalLevelsCompleted:
+          type: integer
+        createdAt:
+          type: string
+        lastLoginAt:
+          type: ["string", "null"]
+      required: [id, clerkId, username, email, coins, gems, level, xp, role, isPremium, isBanned, referralCode, totalLevelsCompleted, createdAt]
+
+    AdminUserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserDetail"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+      required: [users, total, page, totalPages]
+
+    BanInput:
+      type: object
+      properties:
+        reason:
+          type: string
+      required: [reason]
+
+    BalanceAdjustInput:
+      type: object
+      properties:
+        coins:
+          type: integer
+        gems:
+          type: integer
+        reason:
+          type: string
+      required: [reason]
+
+    AdminWithdrawalListResponse:
+      type: object
+      properties:
+        withdrawals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Withdrawal"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+      required: [withdrawals, total, page, totalPages]
+
+    RejectInput:
+      type: object
+      properties:
+        reason:
+          type: string
+      required: [reason]
+
+    RewardConfig:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [daily, spin, level_complete, referral, ad_watch, event]
+        coins:
+          type: integer
+        gems:
+          type: integer
+        xp:
+          type: integer
+        isActive:
+          type: boolean
+        config:
+          type: object
+      required: [id, name, type, coins, gems, xp, isActive]
+
+    RewardConfigInput:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [daily, spin, level_complete, referral, ad_watch, event]
+        coins:
+          type: integer
+        gems:
+          type: integer
+        xp:
+          type: integer
+        isActive:
+          type: boolean
+      required: [name, type, coins, gems, xp, isActive]
+
+    RewardConfigUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        coins:
+          type: integer
+        gems:
+          type: integer
+        xp:
+          type: integer
+        isActive:
+          type: boolean
+
+    AdConfig:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [rewarded, interstitial, banner]
+        coinsReward:
+          type: integer
+        gemsReward:
+          type: integer
+        dailyLimit:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+      required: [id, name, type, coinsReward, gemsReward, dailyLimit, isActive, createdAt]
+
+    AdConfigInput:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [rewarded, interstitial, banner]
+        coinsReward:
+          type: integer
+        gemsReward:
+          type: integer
+        dailyLimit:
+          type: integer
+        isActive:
+          type: boolean
+      required: [name, type, coinsReward, gemsReward, dailyLimit, isActive]
+
+    AdConfigUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        coinsReward:
+          type: integer
+        gemsReward:
+          type: integer
+        dailyLimit:
+          type: integer
+        isActive:
+          type: boolean
+
+    # ── ANALYTICS ─────────────────────────────────────────────────────────────
+    AnalyticsDashboard:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        activeUsersToday:
+          type: integer
+        activeUsersWeek:
+          type: integer
+        premiumUsers:
+          type: integer
+        totalRevenue:
+          type: number
+        revenueToday:
+          type: number
+        pendingWithdrawals:
+          type: integer
+        totalWithdrawals:
+          type: number
+        totalStoriesCompleted:
+          type: integer
+        totalSpins:
+          type: integer
+        newUsersToday:
+          type: integer
+        bannedUsers:
+          type: integer
+      required: [totalUsers, activeUsersToday, activeUsersWeek, premiumUsers, totalRevenue, revenueToday, pendingWithdrawals, totalWithdrawals, totalStoriesCompleted, totalSpins, newUsersToday, bannedUsers]
+
+    RevenueAnalytics:
+      type: object
+      properties:
+        period:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueDataPoint"
+        totalRevenue:
+          type: number
+        growth:
+          type: number
+      required: [period, data, totalRevenue, growth]
+
+    RevenueDataPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        revenue:
+          type: number
+        premiumSales:
+          type: integer
+        withdrawals:
+          type: number
+      required: [date, revenue, premiumSales, withdrawals]
+
+    UserAnalytics:
+      type: object
+      properties:
+        period:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserDataPoint"
+        totalNewUsers:
+          type: integer
+        growthRate:
+          type: number
+      required: [period, data, totalNewUsers, growthRate]
+
+    UserDataPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        newUsers:
+          type: integer
+        activeUsers:
+          type: integer
+      required: [date, newUsers, activeUsers]
