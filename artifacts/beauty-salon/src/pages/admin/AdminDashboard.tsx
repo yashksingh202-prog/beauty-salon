@@ -21,7 +21,7 @@ export function AdminLayout({ children, title }: { children: React.ReactNode; ti
       {/* Sidebar */}
       <aside className="w-56 bg-gray-900 border-r border-gray-800 flex flex-col py-6 px-4 min-h-screen">
         <div className="mb-8">
-          <h1 className="font-fredoka text-2xl text-pink-400">GlamStar</h1>
+          <h1 className="font-fredoka text-2xl text-pink-400">Beauty Empire</h1>
           <p className="text-xs text-gray-500">Admin Panel</p>
         </div>
         <nav className="flex flex-col gap-1 flex-1">

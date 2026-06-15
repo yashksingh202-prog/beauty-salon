@@ -49,7 +49,7 @@ export default function Auth() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Sparkles size={32} className="text-yellow-300 mx-auto mb-2" />
-          <h1 className="font-fredoka text-4xl text-white">GlamStar</h1>
+          <h1 className="font-fredoka text-4xl text-white">Beauty Empire</h1>
           <p className="text-white/70 text-sm">Your beauty adventure awaits</p>
         </div>
 

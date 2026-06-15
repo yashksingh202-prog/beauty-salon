@@ -34,10 +34,10 @@ export default function Splash() {
       <div className="text-center px-6 z-10">
         <div className="flex items-center justify-center gap-3 mb-2">
           <Sparkles size={36} className="text-yellow-300 animate-pulse" />
-          <h1 className="font-fredoka text-6xl text-white drop-shadow-lg">GlamStar</h1>
+          <h1 className="font-fredoka text-6xl text-white drop-shadow-lg">Beauty Empire</h1>
           <Sparkles size={36} className="text-yellow-300 animate-pulse" />
         </div>
-        <p className="text-white/80 text-lg font-semibold mb-1">GlamStar</p>
+        <p className="text-white/80 text-lg font-semibold mb-1">Beauty Empire</p>
         <p className="text-white/60 text-sm">100 levels of glam makeovers!</p>
       </div>
 
