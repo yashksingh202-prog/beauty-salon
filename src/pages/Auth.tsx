@@ -8,16 +8,10 @@ export default function Auth() {
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(false);
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      setLocation("/hub");
-    } catch (e) {
-      setLocation("/hub");
-    } finally {
-      setLoading(false);
-    }
-  };
+ const handleGoogleSignIn = async () => {
+  await login();
+  setLocation("/hub");
+};
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ backgroundColor: "#1e0b2a" }}>
