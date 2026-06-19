@@ -1,0 +1,3 @@
+ext {
+    aapt2Executable = '/data/data/com.termux/files/usr/bin/aapt2'
+}

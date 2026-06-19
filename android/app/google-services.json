@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "5893811081",
+    "project_id": "beauty-salon-bf5cb",
+    "storage_bucket": "beauty-salon-bf5cb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:5893811081:android:954b978c48578234150f58",
+        "android_client_info": {
+          "package_name": "com.uday.beautysalon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBf9rivZkRyrqBVHBowyWNkThEwux7i0ww"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
