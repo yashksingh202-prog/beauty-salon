@@ -49,7 +49,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         achievements: [], completedLevels: {}, totalCoinsEarned: 0,
         totalGemsEarned: 0, gamesPlayed: 0, isBanned: false, isAdmin: true,
       };
-      store.saveUser(adminUser);
+      store.setCurrentUser(adminUser);
       return { success: true };
     }
 
@@ -66,7 +66,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     else if (lastLogin !== today) newStreak = 1;
 
     const updated = { ...found, lastLogin: new Date().toISOString(), streak: newStreak };
-    store.saveUser(updated);
+    store.setcurrent(updated);
 
     const storedProg = localStorage.getItem(`glamstar_progress_${found.id}`);
     if (storedProg) store.saveProgress(JSON.parse(storedProg));
@@ -104,7 +104,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       isBanned: false,
       isAdmin: false,
     };
-    store.saveUser(newUser);
+    store.setCurrentUser(newUser);
     return { success: true };
   }, [store]);
 
