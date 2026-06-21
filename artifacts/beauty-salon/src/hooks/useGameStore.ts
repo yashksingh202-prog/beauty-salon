@@ -112,6 +112,9 @@ export function useGameStore() {
     const parsedUsers: User[] = storedUsers ? JSON.parse(storedUsers) : [];
     setUsers(parsedUsers);
 
+    const GUEST_NAMES = ["StarPlayer","GlamQueen","BeautyPro","StyleIcon","SparkleGirl","GlowUp","PinkDiva","NailStar"];
+    const AVATAR_LIST = ["avatar1","avatar2","avatar3","avatar4","avatar5","avatar6","avatar7","avatar8"];
+
     if (storedCurrentId) {
       const user = parsedUsers.find(u => u.id === storedCurrentId) ?? null;
       if (user) {
@@ -121,6 +124,35 @@ export function useGameStore() {
         const storedRew = localStorage.getItem(`glamstar_rewards_${user.id}`);
         if (storedRew) setRewards(JSON.parse(storedRew));
       }
+    } else {
+      // Auto-create guest account so no login required
+      const guestId = `guest_${Date.now()}`;
+      const guestName = GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)];
+      const guestAvatar = AVATAR_LIST[Math.floor(Math.random() * AVATAR_LIST.length)];
+      const guest: User = {
+        id: guestId,
+        username: guestName,
+        password: "",
+        avatar: guestAvatar,
+        coins: 100,
+        gems: 0,
+        level: 1,
+        xp: 0,
+        streak: 1,
+        lastLogin: new Date().toISOString(),
+        achievements: [],
+        completedLevels: {},
+        totalCoinsEarned: 100,
+        totalGemsEarned: 0,
+        gamesPlayed: 0,
+        isBanned: false,
+        isAdmin: false,
+      };
+      const updatedUsers = [...parsedUsers, guest];
+      localStorage.setItem("glamstar_users", JSON.stringify(updatedUsers));
+      localStorage.setItem("glamstar_current_user_id", guestId);
+      setUsers(updatedUsers);
+      setCurrentUser(guest);
     }
 
     if (storedLeaderboard) {

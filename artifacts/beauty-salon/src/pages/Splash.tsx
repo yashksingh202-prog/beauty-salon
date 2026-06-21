@@ -1,16 +1,7 @@
 import { Link } from "wouter";
 import { Sparkles, Trophy, Star } from "lucide-react";
-import { useGame } from "@/context/GameContext";
-import { useEffect } from "react";
-import { useLocation } from "wouter";
 
 export default function Splash() {
-  const { isLoggedIn } = useGame();
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (isLoggedIn) setLocation("/hub");
-  }, [isLoggedIn, setLocation]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
@@ -75,7 +66,7 @@ export default function Splash() {
 
       {/* CTA Buttons */}
       <div className="flex flex-col gap-3 w-full max-w-xs px-6 z-10">
-        <Link href="/auth">
+        <Link href="/hub">
           <button
             data-testid="btn-play-now"
             className="w-full py-4 rounded-2xl font-fredoka text-xl text-white shadow-lg active:scale-95 transition-transform"

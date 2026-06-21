@@ -24,14 +24,11 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isLoggedIn } = useGame();
-  if (!isLoggedIn) return <Redirect to="/auth" />;
   return <Component />;
 }
 
 function AdminRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isLoggedIn, isAdmin } = useGame();
-  if (!isLoggedIn) return <Redirect to="/auth" />;
+  const { isAdmin } = useGame();
   if (!isAdmin) return <Redirect to="/hub" />;
   return <Component />;
 }
