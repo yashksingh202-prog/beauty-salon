@@ -3,38 +3,63 @@ export type Achievement = {
   name: string;
   description: string;
   icon: string;
-  requirement: string;
+  category: 'progress' | 'currency' | 'streak' | 'mastery' | 'social' | 'special';
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  rewardCoins: number;
+  rewardGems: number;
 };
 
 export const ACHIEVEMENTS: Achievement[] = [
-  { id: "first_play",      name: "First Glam",       description: "Complete your first makeover",         icon: "Sparkles",    requirement: "complete_1_level" },
-  { id: "first_shave",     name: "Smooth Operator",   description: "Complete a shaving step",              icon: "Scissors",    requirement: "complete_shaving" },
-  { id: "nail_painter",    name: "Nail Artist",        description: "Complete a nail painting step",        icon: "Palette",     requirement: "complete_nails" },
-  { id: "level_5",         name: "Getting Started",    description: "Reach level 5",                       icon: "Star",        requirement: "reach_level_5" },
-  { id: "level_10",        name: "Glam Pro",           description: "Reach level 10",                      icon: "Trophy",      requirement: "reach_level_10" },
-  { id: "level_25",        name: "Beauty Queen",       description: "Reach level 25",                      icon: "Crown",       requirement: "reach_level_25" },
-  { id: "level_50",        name: "Makeover Master",    description: "Reach level 50",                      icon: "Crown",       requirement: "reach_level_50" },
-  { id: "streak_3",        name: "3-Day Streak",       description: "Log in 3 days in a row",              icon: "Flame",       requirement: "streak_3" },
-  { id: "streak_7",        name: "Streak Master",      description: "Log in 7 days in a row",              icon: "Flame",       requirement: "streak_7" },
-  { id: "streak_30",       name: "Dedicated Glamster", description: "Log in 30 days in a row",             icon: "Flame",       requirement: "streak_30" },
-  { id: "coins_100",       name: "Coin Collector",     description: "Earn 100 coins",                      icon: "Coins",       requirement: "earn_100_coins" },
-  { id: "coins_1000",      name: "Coin Hoarder",       description: "Earn 1,000 coins total",              icon: "Coins",       requirement: "earn_1000_coins" },
-  { id: "coins_10000",     name: "Coin Millionaire",   description: "Earn 10,000 coins total",             icon: "Coins",       requirement: "earn_10000_coins" },
-  { id: "first_gem",       name: "Gem Hunter",         description: "Earn your first gem",                 icon: "Gem",         requirement: "earn_1_gem" },
-  { id: "gems_10",         name: "Gem Collector",      description: "Earn 10 gems",                        icon: "Gem",         requirement: "earn_10_gems" },
-  { id: "complete_5",      name: "Salon Regular",      description: "Complete 5 makeovers",                icon: "Scissors",    requirement: "complete_5_levels" },
-  { id: "complete_10",     name: "Makeover Queen",     description: "Complete 10 makeovers",               icon: "Scissors",    requirement: "complete_10_levels" },
-  { id: "complete_25",     name: "Glam Guru",          description: "Complete 25 makeovers",               icon: "Scissors",    requirement: "complete_25_levels" },
-  { id: "complete_50",     name: "Legend",             description: "Complete 50 makeovers",               icon: "Trophy",      requirement: "complete_50_levels" },
-  { id: "complete_100",    name: "Hall of Fame",        description: "Complete all 100 levels!",           icon: "Trophy",      requirement: "complete_100_levels" },
-  { id: "first_spin",      name: "Lucky Spinner",      description: "Use the lucky spin wheel",            icon: "RefreshCw",   requirement: "use_spin" },
-  { id: "three_stars",     name: "Perfection",         description: "Get 3 stars on any level",            icon: "Star",        requirement: "three_stars_any" },
-  { id: "five_perfect",    name: "Flawless",           description: "Get 3 stars on 5 levels",             icon: "Star",        requirement: "three_stars_5" },
-  { id: "speed_run",       name: "Speed Stylist",      description: "Complete a level in under 30 seconds",icon: "Zap",         requirement: "complete_under_30s" },
-  { id: "makeover_artist", name: "Makeover Artist",    description: "Complete a makeup step",              icon: "Palette",     requirement: "complete_makeup" },
-  { id: "hairstylist",     name: "Hairstylist",        description: "Complete a hair styling step",        icon: "Wind",        requirement: "complete_hairstyle" },
-  { id: "fashionista",     name: "Fashionista",        description: "Complete an outfit step",             icon: "Shirt",       requirement: "complete_outfit" },
-  { id: "daily_devotee",   name: "Daily Devotee",      description: "Claim 7 daily rewards",               icon: "CalendarCheck",requirement: "claim_7_daily" },
-  { id: "shop_visitor",    name: "Shopaholic",         description: "Visit the shop",                      icon: "ShoppingBag", requirement: "visit_shop" },
-  { id: "referral",        name: "Social Butterfly",   description: "Refer a friend (share your code)",    icon: "Users",       requirement: "visit_profile" },
+  // Progress
+  { id: "first_customer",    name: "First Client",        description: "Complete your very first makeover",             icon: "💄", category: "progress",  rarity: "common",    rewardCoins: 50,   rewardGems: 0 },
+  { id: "level_5",           name: "Getting Glam",        description: "Reach player level 5",                         icon: "⭐", category: "progress",  rarity: "common",    rewardCoins: 100,  rewardGems: 0 },
+  { id: "level_10",          name: "Beauty Pro",          description: "Reach player level 10",                        icon: "🌟", category: "progress",  rarity: "common",    rewardCoins: 200,  rewardGems: 1 },
+  { id: "level_25",          name: "Glam Master",         description: "Reach player level 25",                        icon: "👑", category: "progress",  rarity: "rare",      rewardCoins: 500,  rewardGems: 2 },
+  { id: "level_50",          name: "Style Icon",          description: "Reach player level 50",                        icon: "💎", category: "progress",  rarity: "epic",      rewardCoins: 1000, rewardGems: 5 },
+  { id: "level_100",         name: "Beauty Legend",       description: "Reach player level 100",                       icon: "🏆", category: "progress",  rarity: "legendary", rewardCoins: 5000, rewardGems: 20 },
+
+  // Levels completed
+  { id: "complete_1",        name: "First Steps",         description: "Complete 1 salon level",                       icon: "🌸", category: "progress",  rarity: "common",    rewardCoins: 30,   rewardGems: 0 },
+  { id: "complete_10",       name: "Dedicated Stylist",   description: "Complete 10 salon levels",                     icon: "✂️", category: "progress",  rarity: "common",    rewardCoins: 150,  rewardGems: 0 },
+  { id: "complete_25",       name: "Glam Pro",            description: "Complete 25 salon levels",                     icon: "💅", category: "progress",  rarity: "rare",      rewardCoins: 400,  rewardGems: 1 },
+  { id: "complete_50",       name: "Salon Veteran",       description: "Complete 50 salon levels",                     icon: "🏅", category: "progress",  rarity: "rare",      rewardCoins: 800,  rewardGems: 3 },
+  { id: "complete_100",      name: "Century of Glamour",  description: "Complete 100 salon levels",                    icon: "💯", category: "progress",  rarity: "epic",      rewardCoins: 2000, rewardGems: 10 },
+  { id: "complete_500",      name: "Empire Builder",      description: "Complete 500 salon levels",                    icon: "🌟", category: "mastery",   rarity: "legendary", rewardCoins: 10000,rewardGems: 50 },
+
+  // 3-star mastery
+  { id: "perfect_1",         name: "Perfectionist",       description: "Earn 3 stars on any level",                    icon: "⭐", category: "mastery",   rarity: "common",    rewardCoins: 75,   rewardGems: 0 },
+  { id: "perfect_10",        name: "Star Collector",      description: "Earn 3 stars on 10 different levels",          icon: "🌟", category: "mastery",   rarity: "rare",      rewardCoins: 300,  rewardGems: 2 },
+  { id: "perfect_50",        name: "Flawless",            description: "Earn 3 stars on 50 different levels",          icon: "💫", category: "mastery",   rarity: "epic",      rewardCoins: 1500, rewardGems: 8 },
+
+  // Currency
+  { id: "coins_500",         name: "Coin Collector",      description: "Earn a total of 500 coins",                    icon: "🪙", category: "currency",  rarity: "common",    rewardCoins: 50,   rewardGems: 0 },
+  { id: "coins_5000",        name: "Money Maven",         description: "Earn a total of 5,000 coins",                  icon: "💰", category: "currency",  rarity: "rare",      rewardCoins: 200,  rewardGems: 1 },
+  { id: "coins_50000",       name: "Coin Empress",        description: "Earn a total of 50,000 coins",                 icon: "💸", category: "currency",  rarity: "epic",      rewardCoins: 1000, rewardGems: 5 },
+  { id: "first_gem",         name: "Gem Finder",          description: "Earn your first gem",                          icon: "💎", category: "currency",  rarity: "rare",      rewardCoins: 100,  rewardGems: 0 },
+  { id: "gems_25",           name: "Gem Hoarder",         description: "Collect 25 gems total",                        icon: "👑", category: "currency",  rarity: "epic",      rewardCoins: 500,  rewardGems: 5 },
+
+  // Streak
+  { id: "streak_3",          name: "On a Roll",           description: "Log in 3 days in a row",                       icon: "🔥", category: "streak",    rarity: "common",    rewardCoins: 100,  rewardGems: 0 },
+  { id: "streak_7",          name: "Week Warrior",        description: "Log in 7 days in a row",                       icon: "🔥", category: "streak",    rarity: "rare",      rewardCoins: 300,  rewardGems: 1 },
+  { id: "streak_30",         name: "Monthly Maven",       description: "Log in 30 days in a row",                      icon: "🔥", category: "streak",    rarity: "epic",      rewardCoins: 1000, rewardGems: 5 },
+  { id: "daily_7",           name: "Loyal Client",        description: "Claim daily rewards 7 times",                  icon: "📅", category: "streak",    rarity: "common",    rewardCoins: 150,  rewardGems: 0 },
+  { id: "daily_30",          name: "Daily Devotee",       description: "Claim daily rewards 30 times",                 icon: "🗓️", category: "streak",    rarity: "rare",      rewardCoins: 500,  rewardGems: 3 },
+
+  // Challenge-type mastery
+  { id: "bridal_5",          name: "Wedding Whisperer",   description: "Complete 5 bridal challenges",                 icon: "💍", category: "mastery",   rarity: "rare",      rewardCoins: 400,  rewardGems: 2 },
+  { id: "celebrity_3",       name: "Star Maker",          description: "Complete 3 celebrity makeovers",               icon: "⭐", category: "mastery",   rarity: "rare",      rewardCoins: 600,  rewardGems: 3 },
+  { id: "fashion_5",         name: "Fashion Forward",     description: "Complete 5 fashion show challenges",           icon: "👗", category: "mastery",   rarity: "rare",      rewardCoins: 400,  rewardGems: 2 },
+  { id: "vip_10",            name: "VIP Whisperer",       description: "Serve 10 VIP customers",                       icon: "💎", category: "mastery",   rarity: "epic",      rewardCoins: 1000, rewardGems: 5 },
+
+  // Salon upgrades
+  { id: "first_upgrade",     name: "Salon Investment",    description: "Purchase your first salon upgrade",            icon: "🪑", category: "special",   rarity: "common",    rewardCoins: 100,  rewardGems: 0 },
+  { id: "max_upgrade",       name: "Five-Star Salon",     description: "Max out any salon upgrade to level 5",         icon: "🌟", category: "special",   rarity: "epic",      rewardCoins: 2000, rewardGems: 10 },
+  { id: "all_upgrades",      name: "Empire Complete",     description: "Max out ALL salon upgrades",                   icon: "🏆", category: "special",   rarity: "legendary", rewardCoins: 9999, rewardGems: 30 },
+
+  // Special
+  { id: "spin_winner",       name: "Lucky Spin",          description: "Win gems from the spin wheel",                 icon: "🎰", category: "special",   rarity: "common",    rewardCoins: 50,   rewardGems: 0 },
+  { id: "speed_demon",       name: "Speed Stylist",       description: "Complete a speed challenge",                   icon: "⚡", category: "special",   rarity: "rare",      rewardCoins: 300,  rewardGems: 1 },
+  { id: "perfect_vip",       name: "VIP Perfection",      description: "Get 3 stars on a VIP celebrity level",         icon: "🌟", category: "special",   rarity: "epic",      rewardCoins: 2000, rewardGems: 8 },
+  { id: "shop_spree",        name: "Shopping Queen",      description: "Make 5 purchases from the shop",              icon: "🛍️", category: "special",   rarity: "common",    rewardCoins: 200,  rewardGems: 0 },
+  { id: "event_winner",      name: "Event Champion",      description: "Complete a special event level",               icon: "🎉", category: "special",   rarity: "rare",      rewardCoins: 500,  rewardGems: 3 },
 ];

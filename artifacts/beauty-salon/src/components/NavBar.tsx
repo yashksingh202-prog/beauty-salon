@@ -1,40 +1,41 @@
 import { Link, useLocation } from "wouter";
-import { Home, LayoutGrid, Trophy, Gift, User } from "lucide-react";
 
-const NAV = [
-  { href: "/hub",          icon: Home,        label: "Home" },
-  { href: "/levels",       icon: LayoutGrid,  label: "Levels" },
-  { href: "/leaderboard",  icon: Trophy,      label: "Ranks" },
-  { href: "/rewards",      icon: Gift,        label: "Rewards" },
-  { href: "/profile",      icon: User,        label: "Profile" },
+type NavItem = { path: string; emoji: string; label: string };
+
+const NAV_ITEMS: NavItem[] = [
+  { path: "/hub",         emoji: "🏠", label: "Home"    },
+  { path: "/levels",      emoji: "🎮", label: "Play"    },
+  { path: "/rewards",     emoji: "🎁", label: "Rewards" },
+  { path: "/shop",        emoji: "🛍️", label: "Shop"    },
+  { path: "/leaderboard", emoji: "🏆", label: "Ranks"   },
 ];
 
 export default function NavBar() {
   const [location] = useLocation();
 
   return (
-    <nav
-      data-testid="nav-bar"
-      className="fixed bottom-0 left-0 right-0 z-50 pb-safe"
-      style={{ background: "linear-gradient(to top, hsl(330 80% 60%), hsl(340 70% 55%))" }}
-    >
-      <div className="flex items-center justify-around py-2 max-w-md mx-auto">
-        {NAV.map(({ href, icon: Icon, label }) => {
-          const active = location === href || location.startsWith(href + "/");
-          return (
-            <Link key={href} href={href}>
-              <div
-                data-testid={`nav-${label.toLowerCase()}`}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all ${
-                  active ? "bg-white/25 scale-110" : "opacity-70"
-                }`}
-              >
-                <Icon size={20} className="text-white" />
-                <span className="text-white text-[10px] font-semibold">{label}</span>
-              </div>
-            </Link>
-          );
-        })}
+    <nav className="fixed bottom-0 left-0 right-0 z-50" style={{ backdropFilter: "blur(20px)" }}>
+      <div style={{ background: "rgba(20,8,35,0.92)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex items-center justify-around py-2 px-2 max-w-lg mx-auto pb-safe">
+          {NAV_ITEMS.map(item => {
+            const active = location === item.path || (item.path !== "/hub" && location.startsWith(item.path));
+            return (
+              <Link key={item.path} href={item.path}>
+                <button className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 tap-scale ${active ? "" : "opacity-50"}`}>
+                  <span className="text-2xl leading-none" style={active ? { filter: "drop-shadow(0 0 8px rgba(255,80,150,0.9))" } : {}}>
+                    {item.emoji}
+                  </span>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${active ? "text-pink-300" : "text-white/40"}`}>
+                    {item.label}
+                  </span>
+                  {active && (
+                    <div className="w-1 h-1 rounded-full" style={{ background: "linear-gradient(135deg,#ff4d94,#c084fc)" }} />
+                  )}
+                </button>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );

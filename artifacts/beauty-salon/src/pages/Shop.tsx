@@ -1,143 +1,200 @@
 import { useState } from "react";
 import { useGame } from "@/context/GameContext";
-import CoinBar from "@/components/CoinBar";
 import NavBar from "@/components/NavBar";
-import { ChevronLeft, ShoppingBag, Coins, Check } from "lucide-react";
-import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import CoinBar from "@/components/CoinBar";
+
+type ShopCategory = "boosters" | "cosmetics" | "salon" | "gems";
 
 type ShopItem = {
   id: string;
   name: string;
+  emoji: string;
   description: string;
-  cost: number;
-  costType: "coins" | "gems";
-  category: "tool" | "theme" | "boost";
-  color: string;
+  costCoins?: number;
+  costGems?: number;
+  category: ShopCategory;
+  effect: string;
+  isPopular?: boolean;
+  isBestValue?: boolean;
 };
 
 const SHOP_ITEMS: ShopItem[] = [
-  { id: "golden_razor",    name: "Golden Razor",     description: "Shave 2x faster",        cost: 500,  costType: "coins", category: "tool",  color: "from-yellow-400 to-amber-500" },
-  { id: "sparkle_sponge",  name: "Sparkle Sponge",   description: "Washing gives +10 XP",   cost: 750,  costType: "coins", category: "tool",  color: "from-cyan-400 to-blue-500" },
-  { id: "magic_brush",     name: "Magic Brush",      description: "Makeup auto-completes",   cost: 1000, costType: "coins", category: "tool",  color: "from-violet-400 to-purple-500" },
-  { id: "pink_theme",      name: "Pink Paradise",    description: "Rose pink UI theme",      cost: 300,  costType: "coins", category: "theme", color: "from-pink-400 to-rose-500" },
-  { id: "purple_theme",    name: "Purple Dream",     description: "Lavender UI theme",       cost: 300,  costType: "coins", category: "theme", color: "from-violet-400 to-purple-500" },
-  { id: "gold_theme",      name: "Gold Edition",     description: "Golden UI theme",         cost: 2,    costType: "gems",  category: "theme", color: "from-yellow-400 to-orange-500" },
-  { id: "xp_boost",        name: "XP Boost x2",      description: "Double XP for 10 levels", cost: 1,    costType: "gems",  category: "boost", color: "from-emerald-400 to-teal-500" },
-  { id: "coin_magnet",     name: "Coin Magnet",      description: "+25% coins from levels",  cost: 3,    costType: "gems",  category: "boost", color: "from-amber-400 to-orange-500" },
-  { id: "time_freeze",     name: "Time Freeze",      description: "No time limit for 5 levels",cost: 1,  costType: "gems",  category: "boost", color: "from-sky-400 to-indigo-500" },
+  // Boosters
+  { id: "coin_boost_2x",   name: "2x Coin Boost",      emoji: "🪙", description: "Double coins for the next 5 levels",      costCoins: 300,  category: "boosters", effect: "2x coins ×5 levels", isPopular: true },
+  { id: "xp_boost_2x",     name: "2x XP Boost",         emoji: "⭐", description: "Double XP for the next 5 levels",         costCoins: 250,  category: "boosters", effect: "2x XP ×5 levels" },
+  { id: "star_guarantee",  name: "Star Shield",          emoji: "🛡️", description: "Guarantee at least 1 star on next level", costCoins: 150,  category: "boosters", effect: "1-star guarantee" },
+  { id: "hint_pack",       name: "Hint Pack",            emoji: "💡", description: "Reveal customer preferences for 3 levels", costCoins: 200,  category: "boosters", effect: "3 preference hints" },
+  { id: "tip_master",      name: "Tip Master",           emoji: "💰", description: "Earn 50% extra tips for 10 levels",       costGems: 3,     category: "boosters", effect: "+50% tips ×10 levels", isBestValue: true },
+  { id: "perfect_streak",  name: "Perfect Streak",       emoji: "🎯", description: "Next 3 choices are treated as perfect",   costGems: 5,     category: "boosters", effect: "Perfect ×3 choices" },
+
+  // Cosmetics (salon decoration)
+  { id: "pink_chair",      name: "Pink Crystal Chair",   emoji: "💺", description: "Upgrade your salon with a gorgeous pink throne",  costCoins: 800,  category: "cosmetics", effect: "Salon decoration" },
+  { id: "gold_mirror",     name: "Gold Frame Mirror",    emoji: "🪞", description: "An ornate gold mirror for your salon",            costCoins: 1200, category: "cosmetics", effect: "Salon decoration" },
+  { id: "flower_wall",     name: "Rose Gold Flower Wall",emoji: "🌸", description: "A stunning floral backdrop for makeovers",       costCoins: 1500, category: "cosmetics", effect: "Salon decoration", isPopular: true },
+  { id: "neon_sign",       name: "Glam Neon Sign",       emoji: "💄", description: "A neon 'Glam Empire' sign for your salon",      costCoins: 2000, category: "cosmetics", effect: "Salon decoration" },
+  { id: "vip_lounge",      name: "VIP Lounge Chair",     emoji: "🥂", description: "Ultra-luxe seating for your most special clients", costGems: 8,   category: "cosmetics", effect: "VIP decoration" },
+
+  // Salon upgrades shortcuts
+  { id: "coin_pack_sm",    name: "Coin Pack S",          emoji: "🪙", description: "500 coins instantly",           costGems: 1,  category: "gems", effect: "+500 coins" },
+  { id: "coin_pack_md",    name: "Coin Pack M",          emoji: "💰", description: "2,000 coins instantly",        costGems: 3,  category: "gems", effect: "+2,000 coins", isBestValue: true },
+  { id: "coin_pack_lg",    name: "Coin Pack L",          emoji: "💸", description: "10,000 coins instantly",      costGems: 12, category: "gems", effect: "+10,000 coins" },
+  { id: "gem_pack_sm",     name: "Gem Pack S",           emoji: "💎", description: "5 gems instantly",            costCoins: 1000, category: "gems", effect: "+5 gems" },
+  { id: "gem_pack_md",     name: "Gem Pack M",           emoji: "💎", description: "15 gems instantly",          costCoins: 2500, category: "gems", effect: "+15 gems", isPopular: true },
 ];
 
-type Category = "all" | "tool" | "theme" | "boost";
+const CATEGORIES: { id: ShopCategory; label: string; emoji: string }[] = [
+  { id: "boosters",  label: "Boosters",  emoji: "⚡" },
+  { id: "cosmetics", label: "Decor",     emoji: "🌸" },
+  { id: "gems",      label: "Packs",     emoji: "💎" },
+];
 
 export default function Shop() {
-  const { user, addCoins, addGems, unlockAchievement } = useGame();
-  const { toast } = useToast();
-  const [category, setCategory] = useState<Category>("all");
-  const [purchased, setPurchased] = useState<string[]>(() =>
-    JSON.parse(localStorage.getItem("glamstar_shop_" + (user?.id ?? "")) ?? "[]")
-  );
+  const { user, purchaseShopItem, addCoins, addGems, spendCoins, spendGems, checkAchievements } = useGame();
+  const [activeCategory, setActiveCategory] = useState<ShopCategory>("boosters");
+  const [buyResult, setBuyResult] = useState<{ msg: string; success: boolean } | null>(null);
 
-  if (!user) return null;
+  const items = SHOP_ITEMS.filter(i => i.category === activeCategory);
+  const owned = user?.shopPurchases ?? [];
 
-  const shown = category === "all" ? SHOP_ITEMS : SHOP_ITEMS.filter(i => i.category === category);
-
-  const handleBuy = (item: ShopItem) => {
-    if (purchased.includes(item.id)) {
-      toast({ title: "Already owned!", variant: "destructive" });
-      return;
+  function handleBuy(item: ShopItem) {
+    let success = false;
+    if (item.costCoins) {
+      success = purchaseShopItem(item.id, item.costCoins);
+      if (success) {
+        // Apply instant effects
+        if (item.id === "gem_pack_sm")  addGems(5);
+        if (item.id === "gem_pack_md")  addGems(15);
+      }
+    } else if (item.costGems) {
+      if ((user?.gems ?? 0) < item.costGems) {
+        setBuyResult({ msg: "Not enough gems!", success: false });
+        setTimeout(() => setBuyResult(null), 2000);
+        return;
+      }
+      spendGems(item.costGems);
+      success = true;
+      // Apply instant effects
+      if (item.id === "coin_pack_sm") addCoins(500);
+      if (item.id === "coin_pack_md") addCoins(2000);
+      if (item.id === "coin_pack_lg") addCoins(10000);
     }
-    if (item.costType === "coins" && user.coins < item.cost) {
-      toast({ title: "Not enough coins!", variant: "destructive" });
-      return;
-    }
-    if (item.costType === "gems" && user.gems < item.cost) {
-      toast({ title: "Not enough gems!", variant: "destructive" });
-      return;
-    }
-    if (item.costType === "coins") addCoins(-item.cost);
-    else addGems(-item.cost);
 
-    const newOwned = [...purchased, item.id];
-    setPurchased(newOwned);
-    localStorage.setItem("glamstar_shop_" + user.id, JSON.stringify(newOwned));
-    unlockAchievement("shop_visitor");
-    toast({ title: `${item.name} purchased!`, description: "Item added to your collection" });
-  };
+    if (success) {
+      setBuyResult({ msg: `${item.emoji} ${item.name} purchased!`, success: true });
+      checkAchievements();
+    } else {
+      setBuyResult({ msg: "Not enough coins!", success: false });
+    }
+    setTimeout(() => setBuyResult(null), 2500);
+  }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <CoinBar />
-      <div className="pt-14 px-4 max-w-md mx-auto">
-        <div className="flex items-center gap-3 py-3">
-          <Link href="/hub">
-            <button className="p-2 rounded-xl bg-card border border-border">
-              <ChevronLeft size={20} />
-            </button>
-          </Link>
-          <h1 className="font-fredoka text-2xl">Shop</h1>
-          <ShoppingBag size={20} className="ml-auto text-primary" />
+    <div className="min-h-screen pb-24" style={{ background: "linear-gradient(160deg,hsl(285 40% 8%),hsl(330 35% 11%),hsl(310 30% 9%))" }}>
+      <CoinBar title="Shop" showBack />
+
+      <div className="px-4 max-w-lg mx-auto mt-4">
+
+        {/* Balance cards */}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="rounded-2xl p-3 text-center glass-card-gold">
+            <div className="text-2xl mb-0.5">🪙</div>
+            <div className="font-fredoka text-yellow-300 text-xl">{(user?.coins ?? 0).toLocaleString()}</div>
+            <div className="text-yellow-200/50 text-xs font-bold">COINS</div>
+          </div>
+          <div className="rounded-2xl p-3 text-center glass-card">
+            <div className="text-2xl mb-0.5">💎</div>
+            <div className="font-fredoka text-purple-300 text-xl">{user?.gems ?? 0}</div>
+            <div className="text-purple-200/50 text-xs font-bold">GEMS</div>
+          </div>
         </div>
 
-        {/* Category filter */}
+        {/* Purchase result toast */}
+        {buyResult && (
+          <div className={`rounded-2xl p-3 mb-4 text-center font-fredoka text-lg animate-bounce-in ${buyResult.success ? "glass-card-gold" : "glass-card"}`}
+            style={{ color: buyResult.success ? "#FFD700" : "#ff6b6b" }}>
+            {buyResult.msg}
+          </div>
+        )}
+
+        {/* Category tabs */}
         <div className="flex gap-2 mb-4">
-          {(["all","tool","theme","boost"] as Category[]).map(c => (
-            <button
-              key={c}
-              data-testid={`shop-cat-${c}`}
-              onClick={() => setCategory(c)}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold capitalize transition-all ${
-                category === c ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {c}
+          {CATEGORIES.map(cat => (
+            <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
+              className="flex-1 py-2.5 rounded-xl font-bold text-sm tap-scale transition-all"
+              style={{
+                background: activeCategory === cat.id ? "linear-gradient(135deg,rgba(255,80,150,0.3),rgba(180,80,255,0.2))" : "rgba(255,255,255,0.05)",
+                border: activeCategory === cat.id ? "1px solid rgba(255,80,150,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                color: activeCategory === cat.id ? "white" : "rgba(255,255,255,0.5)",
+              }}>
+              {cat.emoji} {cat.label}
             </button>
           ))}
         </div>
 
         {/* Items grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {shown.map(item => {
-            const owned = purchased.includes(item.id);
-            const canAfford = item.costType === "coins" ? user.coins >= item.cost : user.gems >= item.cost;
+        <div className="grid grid-cols-1 gap-3">
+          {items.map(item => {
+            const isOwned = owned.includes(item.id) && item.category !== "gems";
+            const canAfford = item.costCoins
+              ? (user?.coins ?? 0) >= item.costCoins
+              : (user?.gems ?? 0) >= (item.costGems ?? 0);
+
             return (
-              <div
-                key={item.id}
-                data-testid={`shop-item-${item.id}`}
-                className="bg-card border border-border rounded-2xl overflow-hidden"
-              >
-                <div className={`h-20 bg-gradient-to-br ${item.color} flex items-center justify-center`}>
-                  {owned && (
-                    <div className="bg-white/30 rounded-full p-2">
-                      <Check size={24} className="text-white" />
+              <div key={item.id}
+                className="rounded-2xl p-4 flex items-center gap-3 animate-slide-up"
+                style={{
+                  background: isOwned ? "rgba(255,200,60,0.08)" : "rgba(255,255,255,0.05)",
+                  border: isOwned ? "1px solid rgba(255,200,60,0.25)" : "1px solid rgba(255,255,255,0.08)",
+                }}>
+                {/* Tags */}
+                <div className="relative shrink-0">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
+                    style={{ background: "rgba(255,255,255,0.06)" }}>
+                    {item.emoji}
+                  </div>
+                  {item.isPopular && (
+                    <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold"
+                      style={{ background: "linear-gradient(135deg,#ff4d94,#c084fc)", color: "white" }}>
+                      HOT
+                    </div>
+                  )}
+                  {item.isBestValue && (
+                    <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold"
+                      style={{ background: "linear-gradient(135deg,#FFD700,#FF9A3C)", color: "#1a0a00" }}>
+                      BEST
                     </div>
                   )}
                 </div>
-                <div className="p-3">
-                  <h3 className="font-fredoka text-sm text-foreground">{item.name}</h3>
-                  <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-                  <Button
-                    size="sm"
-                    onClick={() => handleBuy(item)}
-                    disabled={owned || !canAfford}
-                    className={`w-full text-xs h-8 ${owned ? "bg-muted text-muted-foreground" : ""}`}
-                    variant={owned ? "outline" : "default"}
-                  >
-                    {owned ? "Owned" : (
-                      <span className="flex items-center gap-1">
-                        {item.costType === "coins"
-                          ? <><Coins size={12} />{item.cost}</>
-                          : <><span className="text-cyan-400">♦</span>{item.cost}</>}
-                      </span>
-                    )}
-                  </Button>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-fredoka text-white text-sm">{item.name}</div>
+                  <div className="text-white/45 text-xs">{item.description}</div>
+                  <div className="text-pink-300/70 text-[11px] font-bold mt-0.5">{item.effect}</div>
+                </div>
+
+                {/* Buy button */}
+                <div className="shrink-0">
+                  {isOwned ? (
+                    <div className="px-3 py-2 rounded-xl text-xs font-bold text-green-300 glass-card">✓ Owned</div>
+                  ) : (
+                    <button onClick={() => handleBuy(item)}
+                      className="px-3 py-2 rounded-xl text-xs font-bold tap-scale transition-all"
+                      style={{
+                        background: canAfford ? "linear-gradient(135deg,rgba(255,80,150,0.3),rgba(180,80,255,0.2))" : "rgba(255,255,255,0.06)",
+                        border: canAfford ? "1px solid rgba(255,80,150,0.4)" : "1px solid rgba(255,255,255,0.1)",
+                        color: canAfford ? "white" : "rgba(255,255,255,0.3)",
+                      }}>
+                      {item.costCoins ? `🪙 ${item.costCoins.toLocaleString()}` : `💎 ${item.costGems}`}
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       </div>
+
       <NavBar />
     </div>
   );

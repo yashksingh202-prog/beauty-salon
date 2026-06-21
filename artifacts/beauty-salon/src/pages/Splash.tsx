@@ -1,94 +1,141 @@
 import { Link } from "wouter";
-import { Sparkles, Trophy, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const FLOAT_ICONS = ["💄","💅","👑","💎","✨","🌸","💋","🪞","💍","🌟","🎀","🧴"];
+
+function FloatingIcon({ emoji, style }: { emoji: string; style: React.CSSProperties }) {
+  return (
+    <div className="absolute text-2xl pointer-events-none select-none opacity-30 animate-float" style={style}>
+      {emoji}
+    </div>
+  );
+}
+
+function Particle({ style }: { style: React.CSSProperties }) {
+  return (
+    <div
+      className="absolute rounded-full pointer-events-none"
+      style={{
+        width: "4px", height: "4px",
+        background: "radial-gradient(circle, #FFD700, #FF69B4)",
+        boxShadow: "0 0 6px #FFD700",
+        animation: `float-slow ${2 + Math.random() * 3}s ease-in-out infinite`,
+        ...style,
+      }}
+    />
+  );
+}
 
 export default function Splash() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 100);
+    return () => clearTimeout(t);
+  }, []);
+
+  const floaters = FLOAT_ICONS.map((emoji, i) => ({
+    emoji,
+    style: {
+      top: `${8 + (i * 7.5) % 82}%`,
+      left: `${(i * 13 + 5) % 90}%`,
+      fontSize: `${1.2 + (i % 3) * 0.6}rem`,
+      animationDelay: `${i * 0.4}s`,
+      animationDuration: `${3 + (i % 3)}s`,
+    } as React.CSSProperties,
+  }));
+
+  const particles = Array.from({ length: 20 }).map((_, i) => ({
+    style: {
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      animationDelay: `${i * 0.3}s`,
+      opacity: 0.4 + Math.random() * 0.4,
+    } as React.CSSProperties,
+  }));
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
-      style={{ background: "linear-gradient(160deg, hsl(330 80% 65%) 0%, hsl(270 60% 55%) 50%, hsl(300 70% 40%) 100%)" }}
+    <div
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
+      style={{ background: "linear-gradient(160deg, hsl(285 45% 8%) 0%, hsl(330 40% 12%) 40%, hsl(310 35% 10%) 100%)" }}
     >
-      {/* Decorative sparkles */}
-      {[...Array(12)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute w-2 h-2 rounded-full bg-yellow-200/60"
-          style={{
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${i * 0.3}s`,
-            animation: "float 3s ease-in-out infinite",
-          }}
-        />
-      ))}
-
-      {/* Logo */}
-      <div className="text-center px-6 z-10">
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <Sparkles size={36} className="text-yellow-300 animate-pulse" />
-          <h1 className="font-fredoka text-6xl text-white drop-shadow-lg">Beauty Empire</h1>
-          <Sparkles size={36} className="text-yellow-300 animate-pulse" />
-        </div>
-        <p className="text-white/80 text-lg font-semibold mb-1">Beauty Empire</p>
-        <p className="text-white/60 text-sm">100 levels of glam makeovers!</p>
+      {/* Ambient glows */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, hsl(330 90% 60%), transparent)", filter: "blur(40px)" }} />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, hsl(270 80% 60%), transparent)", filter: "blur(40px)" }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-10"
+          style={{ background: "radial-gradient(circle, hsl(43 92% 60%), transparent)", filter: "blur(60px)" }} />
       </div>
 
-      {/* Cartoon face illustration */}
-      <div className="my-8 animate-float" data-testid="splash-illustration">
-        <div className="relative w-36 h-36">
-          {/* Face */}
-          <div className="w-36 h-36 rounded-full bg-gradient-to-b from-amber-100 to-amber-200 border-4 border-white shadow-xl flex items-center justify-center">
-            {/* Eyes */}
-            <div className="absolute top-10 left-8 w-5 h-6 rounded-full bg-gray-800 flex items-start justify-center pt-1">
-              <div className="w-2 h-2 rounded-full bg-white" />
-            </div>
-            <div className="absolute top-10 right-8 w-5 h-6 rounded-full bg-gray-800 flex items-start justify-center pt-1">
-              <div className="w-2 h-2 rounded-full bg-white" />
-            </div>
-            {/* Blush */}
-            <div className="absolute top-14 left-5 w-8 h-4 rounded-full bg-pink-300/60" />
-            <div className="absolute top-14 right-5 w-8 h-4 rounded-full bg-pink-300/60" />
-            {/* Smile */}
-            <div className="absolute bottom-10 w-14 h-7 border-b-4 border-pink-400 rounded-b-full" />
-          </div>
-          {/* Crown */}
-          <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-            <div className="flex gap-1 items-end">
-              {[3,5,3].map((h, i) => (
-                <div key={i} className={`w-4 bg-yellow-400 rounded-sm`} style={{ height: `${h * 4}px` }}>
-                  <Star size={8} className="text-yellow-200 mx-auto mt-0.5" fill="currentColor" />
-                </div>
-              ))}
-            </div>
-            <div className="h-3 bg-yellow-400 rounded-sm w-14" />
-          </div>
-        </div>
-      </div>
+      {/* Floating emojis */}
+      {floaters.map((f, i) => <FloatingIcon key={i} emoji={f.emoji} style={f.style} />)}
 
-      {/* CTA Buttons */}
-      <div className="flex flex-col gap-3 w-full max-w-xs px-6 z-10">
+      {/* Sparkle particles */}
+      {particles.map((p, i) => <Particle key={i} style={p.style} />)}
+
+      {/* Main content */}
+      <div className={`relative z-10 flex flex-col items-center px-6 text-center transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+
+        {/* Crown icon */}
+        <div className="text-7xl mb-4 animate-float" style={{ animationDuration: "3s", filter: "drop-shadow(0 0 20px rgba(255,215,0,0.6))" }}>
+          👑
+        </div>
+
+        {/* Title */}
+        <div className="mb-2">
+          <p className="text-white/60 text-sm font-nunito font-700 tracking-[0.3em] uppercase mb-1">Beauty Salon</p>
+          <h1 className="font-fredoka text-shimmer leading-none" style={{ fontSize: "clamp(2.5rem, 10vw, 4rem)" }}>
+            GLAM EMPIRE
+          </h1>
+        </div>
+
+        {/* Subtitle */}
+        <p className="text-white/50 text-sm font-semibold mt-2 mb-8 tracking-wide">
+          Build Your Beauty Empire ✨
+        </p>
+
+        {/* Feature pills */}
+        <div className="flex flex-wrap gap-2 justify-center mb-10 max-w-xs">
+          {["10,000+ Levels", "VIP Customers", "Salon Upgrades", "Daily Rewards"].map(f => (
+            <span key={f} className="chip glass-card text-white/70 border border-white/10">{f}</span>
+          ))}
+        </div>
+
+        {/* Play button */}
         <Link href="/hub">
           <button
-            data-testid="btn-play-now"
-            className="w-full py-4 rounded-2xl font-fredoka text-xl text-white shadow-lg active:scale-95 transition-transform"
-            style={{ background: "linear-gradient(135deg, hsl(43 92% 58%), hsl(38 85% 65%))" }}
+            className="relative w-64 py-5 rounded-2xl font-fredoka text-2xl text-white shadow-2xl animate-pulse-gold tap-scale overflow-hidden"
+            style={{ background: "linear-gradient(135deg, hsl(43 95% 55%), hsl(38 90% 65%))", color: "#1a0a00" }}
           >
-            Play Now
+            <span className="relative z-10">✨ Play Now ✨</span>
+            <div className="absolute inset-0 opacity-30"
+              style={{ background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)", backgroundSize: "200% 100%", animation: "shimmer-bg 2s infinite" }} />
           </button>
         </Link>
-        <Link href="/leaderboard">
-          <button
-            data-testid="btn-leaderboard"
-            className="w-full py-3 rounded-2xl font-fredoka text-lg text-white bg-white/20 backdrop-blur border border-white/30 active:scale-95 transition-transform"
-          >
-            <Trophy size={16} className="inline mr-2" />
-            Leaderboard
-          </button>
-        </Link>
+
+        {/* Stats bar */}
+        <div className="flex gap-8 mt-10">
+          {[
+            { label: "Levels", value: "10,000+" },
+            { label: "Customers", value: "20+" },
+            { label: "Upgrades", value: "25+" },
+          ].map(s => (
+            <div key={s.label} className="text-center">
+              <div className="text-xl font-fredoka text-gold">{s.value}</div>
+              <div className="text-xs text-white/40 font-semibold uppercase tracking-wider">{s.label}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Bottom wave */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 opacity-20"
-        style={{ background: "radial-gradient(ellipse at bottom, white 0%, transparent 70%)" }} />
+      {/* Admin link */}
+      <Link href="/admin">
+        <button className="absolute bottom-6 right-6 text-white/20 text-xs font-semibold hover:text-white/40 transition-colors">
+          Admin
+        </button>
+      </Link>
     </div>
   );
 }

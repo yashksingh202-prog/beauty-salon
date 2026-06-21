@@ -1,558 +1,580 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGame } from "@/context/GameContext";
-import { getLevelById, DIFFICULTY_BG, StepType } from "@/data/levels";
-import CoinBar from "@/components/CoinBar";
-import { ChevronLeft, Star, Coins, Zap, Check } from "lucide-react";
-import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
+import { generateLevel, ServiceType } from "@/data/levels";
+import { Customer } from "@/data/customers";
 
-const PALETTE_COLORS = ["#FF6B9D","#C084FC","#FB923C","#F472B6","#F43F5E","#A78BFA","#FBBF24","#34D399"];
+// ── Service data ─────────────────────────────────────────────────────────────
 
-// ── Shaving / Washing step ──────────────────────────────────────────────────
-const GRID_COLS = 12;
-const GRID_ROWS = 14;
-const TOTAL_CELLS = GRID_COLS * GRID_ROWS;
+const FOUNDATION_FINISHES = [
+  { id: "natural", emoji: "✨", label: "Natural", desc: "Everyday radiance" },
+  { id: "matte",   emoji: "🖤", label: "Matte",   desc: "Flawless & smooth" },
+  { id: "dewy",    emoji: "💧", label: "Dewy",    desc: "Fresh & hydrated" },
+  { id: "glowy",   emoji: "🌟", label: "Glowy",   desc: "Luminous shimmer" },
+];
 
-function ScrubStep({
-  type,
-  onComplete,
-}: {
-  type: "shaving" | "washing";
-  onComplete: () => void;
-}) {
-  const [cleaned, setCleaned] = useState<Set<number>>(new Set());
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isPointerDown = useRef(false);
-  const completed = useRef(false);
+const EYE_STYLES = [
+  { id: "natural",  emoji: "🌸", label: "Natural",  desc: "Soft & subtle" },
+  { id: "smoky",    emoji: "🖤", label: "Smoky",    desc: "Dark & intense" },
+  { id: "colorful", emoji: "🌈", label: "Colorful", desc: "Bold & bright" },
+  { id: "dramatic", emoji: "✨", label: "Dramatic", desc: "Striking impact" },
+];
 
-  const getCellIdx = useCallback((clientX: number, clientY: number) => {
-    if (!containerRef.current) return -1;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    const col = Math.floor((x / rect.width) * GRID_COLS);
-    const row = Math.floor((y / rect.height) * GRID_ROWS);
-    if (col < 0 || col >= GRID_COLS || row < 0 || row >= GRID_ROWS) return -1;
-    return row * GRID_COLS + col;
-  }, []);
+const LIP_STYLES = [
+  { id: "natural", emoji: "🌸", label: "Natural", desc: "Barely-there" },
+  { id: "matte",   emoji: "🖤", label: "Matte",   desc: "Velvety bold" },
+  { id: "glossy",  emoji: "💋", label: "Glossy",  desc: "Luscious shine" },
+  { id: "bold",    emoji: "🔴", label: "Bold",    desc: "Statement lip" },
+];
 
-  const scrub = useCallback(
-    (clientX: number, clientY: number) => {
-      const idx = getCellIdx(clientX, clientY);
-      if (idx === -1) return;
-      setCleaned((prev) => {
-        if (prev.has(idx)) return prev;
-        const next = new Set(prev);
-        next.add(idx);
-        // Also clean adjacent cells for smoother feel
-        [idx - 1, idx + 1, idx - GRID_COLS, idx + GRID_COLS].forEach((n) => {
-          if (n >= 0 && n < TOTAL_CELLS) next.add(n);
-        });
-        if (!completed.current && next.size >= TOTAL_CELLS * 0.88) {
-          completed.current = true;
-          setTimeout(onComplete, 400);
-        }
-        return next;
-      });
-    },
-    [getCellIdx, onComplete]
-  );
+const HAIR_STYLES = [
+  { id: "straight", emoji: "💇", label: "Straight", desc: "Sleek & polished" },
+  { id: "waves",    emoji: "🌊", label: "Waves",    desc: "Effortless chic" },
+  { id: "curls",    emoji: "💫", label: "Curls",    desc: "Romantic bouncy" },
+  { id: "updo",     emoji: "👑", label: "Updo",     desc: "Elegant formal" },
+  { id: "bob",      emoji: "✂️", label: "Bob",      desc: "Modern fresh" },
+  { id: "braided",  emoji: "🎀", label: "Braided",  desc: "Artistic unique" },
+];
 
-  const pct = Math.min(100, Math.round((cleaned.size / TOTAL_CELLS) * 100));
+const NAIL_DESIGNS = [
+  { id: "plain",    emoji: "💅", label: "Plain",    desc: "Clean & simple" },
+  { id: "french",   emoji: "✨", label: "French",   desc: "Classic elegance" },
+  { id: "gradient", emoji: "🌅", label: "Gradient", desc: "Ombré fade" },
+  { id: "art",      emoji: "🎨", label: "Nail Art", desc: "Unique & creative" },
+];
 
+const OUTFIT_OPTIONS = [
+  { id: "casual_chic",  emoji: "👗", label: "Casual Chic",  desc: "Effortless style" },
+  { id: "power_suit",   emoji: "💼", label: "Power Suit",   desc: "Bold authority" },
+  { id: "evening_gown", emoji: "🥂", label: "Evening Gown", desc: "Red carpet glam" },
+  { id: "bohemian",     emoji: "🌸", label: "Bohemian",     desc: "Free-spirited" },
+];
+
+const ACCESSORY_OPTIONS = [
+  { id: "tiara",        emoji: "👸", label: "Tiara",         desc: "Royal princess" },
+  { id: "veil",         emoji: "💍", label: "Veil",          desc: "Traditional bridal" },
+  { id: "flower_crown", emoji: "🌸", label: "Flower Crown",  desc: "Garden romance" },
+  { id: "minimalist",   emoji: "✨", label: "Minimalist",    desc: "Simple elegance" },
+];
+
+const COLOR_SWATCHES: Record<ServiceType, { id: string; hex: string; label: string }[]> = {
+  foundation: [
+    { id: "fair",   hex: "#FFE4CC", label: "Fair"   },
+    { id: "light",  hex: "#FFD1A8", label: "Light"  },
+    { id: "medium", hex: "#D4956A", label: "Medium" },
+    { id: "tan",    hex: "#B87049", label: "Tan"    },
+    { id: "deep",   hex: "#8B4513", label: "Deep"   },
+    { id: "rich",   hex: "#5C2D0A", label: "Rich"   },
+  ],
+  eyes: [
+    { id: "brown",  hex: "#8B4513", label: "Brown"  },
+    { id: "black",  hex: "#2C2C2C", label: "Black"  },
+    { id: "gold",   hex: "#FFD700", label: "Gold"   },
+    { id: "pink",   hex: "#FF69B4", label: "Pink"   },
+    { id: "purple", hex: "#9370DB", label: "Purple" },
+    { id: "blue",   hex: "#4169E1", label: "Blue"   },
+    { id: "green",  hex: "#3CB371", label: "Green"  },
+    { id: "silver", hex: "#C0C0C0", label: "Silver" },
+  ],
+  lips: [
+    { id: "nude",   hex: "#C09280", label: "Nude"   },
+    { id: "pink",   hex: "#FF69B4", label: "Pink"   },
+    { id: "red",    hex: "#DC143C", label: "Red"    },
+    { id: "coral",  hex: "#FF7F50", label: "Coral"  },
+    { id: "berry",  hex: "#9B2335", label: "Berry"  },
+    { id: "peach",  hex: "#FFCBA4", label: "Peach"  },
+    { id: "plum",   hex: "#9A4EAE", label: "Plum"   },
+    { id: "rose",   hex: "#FF007F", label: "Rose"   },
+  ],
+  hair: [
+    { id: "black",    hex: "#1a1a1a", label: "Black"    },
+    { id: "brunette", hex: "#5C4033", label: "Brunette" },
+    { id: "chestnut", hex: "#954535", label: "Chestnut" },
+    { id: "auburn",   hex: "#A52A2A", label: "Auburn"   },
+    { id: "golden",   hex: "#FFD700", label: "Golden"   },
+    { id: "ash",      hex: "#B0A0B0", label: "Ash"      },
+    { id: "silver",   hex: "#C0C0C0", label: "Silver"   },
+    { id: "pink",     hex: "#FF69B4", label: "Pink"     },
+  ],
+  nails: [
+    { id: "nude",   hex: "#C09280", label: "Nude"   },
+    { id: "pink",   hex: "#FF69B4", label: "Pink"   },
+    { id: "red",    hex: "#DC143C", label: "Red"    },
+    { id: "purple", hex: "#9370DB", label: "Purple" },
+    { id: "blue",   hex: "#4169E1", label: "Blue"   },
+    { id: "gold",   hex: "#FFD700", label: "Gold"   },
+    { id: "black",  hex: "#2C2C2C", label: "Black"  },
+    { id: "white",  hex: "#F0F0F0", label: "White"  },
+  ],
+  outfit:      [],
+  accessories: [],
+};
+
+const SERVICE_META: Record<ServiceType, { label: string; emoji: string; hint: string }> = {
+  foundation:  { label: "Foundation",   emoji: "✨", hint: "skin prep" },
+  eyes:        { label: "Eye Makeup",   emoji: "👁️", hint: "eye style" },
+  lips:        { label: "Lip Color",    emoji: "💋", hint: "lip look" },
+  hair:        { label: "Hair Styling", emoji: "💇", hint: "hair style" },
+  nails:       { label: "Nail Art",     emoji: "💅", hint: "nail design" },
+  outfit:      { label: "Outfit",       emoji: "👗", hint: "fashion choice" },
+  accessories: { label: "Accessories",  emoji: "💍", hint: "bridal extras" },
+};
+
+// ── Scoring ───────────────────────────────────────────────────────────────────
+
+function scoreService(service: ServiceType, customer: Customer, style: string): number {
+  const prefs: Partial<Record<ServiceType, string>> = {
+    foundation: customer.preferredFoundation,
+    eyes:       customer.preferredEyeStyle,
+    lips:       customer.preferredLipStyle,
+    hair:       customer.preferredHairStyle,
+    nails:      customer.preferredNailDesign,
+  };
+  const pref = prefs[service];
+  if (!pref) return 65 + Math.floor(Math.random() * 30);
+
+  if (style === pref) return 88 + Math.floor(Math.random() * 12);
+
+  const adjacentMap: Record<string, string[]> = {
+    natural: ["dewy"],  dewy: ["natural","glowy"],  glowy: ["dewy"],  matte: ["natural"],
+    smoky: ["dramatic"], dramatic: ["smoky","colorful"], colorful: ["dramatic"],
+    glossy: ["natural","bold"], bold: ["matte"], natural_lip: ["glossy"],
+    waves: ["curls","straight"], curls: ["waves"], straight: ["waves","bob"], updo: ["curls"], bob: ["straight"],
+    french: ["plain"], gradient: ["art"], art: ["gradient"], plain: ["french"],
+  };
+  const adjacent = adjacentMap[pref] ?? [];
+  if (adjacent.includes(style)) return 62 + Math.floor(Math.random() * 18);
+
+  return 25 + Math.floor(Math.random() * 25);
+}
+
+// ── Confetti ──────────────────────────────────────────────────────────────────
+
+function Confetti() {
+  const COLORS = ["#FF4D94","#C084FC","#FFD700","#FF6B35","#34D399","#60A5FA"];
   return (
-    <div className="flex flex-col items-center gap-4">
-      <p className="text-sm font-semibold text-muted-foreground">
-        {type === "shaving" ? "Swipe to shave!" : "Rub to clean the face!"}
-      </p>
-
-      {/* Progress */}
-      <div className="w-full">
-        <Progress value={pct} className="h-3 [&>div]:bg-primary" />
-        <p className="text-xs text-center text-muted-foreground mt-1">{pct}% done</p>
-      </div>
-
-      {/* Canvas area */}
-      <div
-        ref={containerRef}
-        data-testid="scrub-canvas"
-        className="relative w-full rounded-3xl overflow-hidden select-none touch-none"
-        style={{
-          aspectRatio: `${GRID_COLS}/${GRID_ROWS}`,
-          background: type === "shaving"
-            ? "linear-gradient(135deg, hsl(43 50% 82%), hsl(30 40% 78%))"
-            : "linear-gradient(135deg, hsl(30 60% 75%), hsl(20 50% 70%))",
-        }}
-        onPointerDown={(e) => { isPointerDown.current = true; scrub(e.clientX, e.clientY); (e.target as HTMLElement).setPointerCapture(e.pointerId); }}
-        onPointerMove={(e) => { if (isPointerDown.current) scrub(e.clientX, e.clientY); }}
-        onPointerUp={() => { isPointerDown.current = false; }}
-      >
-        {/* Dirt / stubble overlay cells */}
-        <div
-          className="absolute inset-0 grid"
-          style={{ gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`, gridTemplateRows: `repeat(${GRID_ROWS}, 1fr)` }}
-        >
-          {Array.from({ length: TOTAL_CELLS }, (_, i) => (
-            <div
-              key={i}
-              className="transition-opacity duration-150"
-              style={{
-                opacity: cleaned.has(i) ? 0 : 1,
-                backgroundColor: type === "shaving"
-                  ? `hsl(220 10% ${30 + (i % 3) * 5}% / 0.6)`
-                  : `hsl(25 50% ${40 + (i % 4) * 5}% / 0.55)`,
-                borderRadius: type === "shaving" ? "1px" : "50%",
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Face outline */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-24 h-28 rounded-full border-4 border-white/40" />
-        </div>
-      </div>
+    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+      {Array.from({ length: 40 }).map((_, i) => (
+        <div key={i} className="absolute animate-confetti rounded-sm"
+          style={{
+            left: `${Math.random() * 100}%`,
+            width:  `${6 + Math.random() * 8}px`,
+            height: `${8 + Math.random() * 12}px`,
+            background: COLORS[i % COLORS.length],
+            animationDelay: `${Math.random() * 1.5}s`,
+            animationDuration: `${2 + Math.random() * 2}s`,
+          }} />
+      ))}
     </div>
   );
 }
 
-// ── Makeup step ──────────────────────────────────────────────────────────────
-const MAKEUP_AREAS = [
-  { id: "lips",      label: "Lips",       cx: 50, cy: 72, rx: 20, ry: 8 },
-  { id: "left_eye",  label: "Left Eye",   cx: 32, cy: 42, rx: 14, ry: 7 },
-  { id: "right_eye", label: "Right Eye",  cx: 68, cy: 42, rx: 14, ry: 7 },
-  { id: "left_blush",label: "Blush L",    cx: 22, cy: 58, rx: 12, ry: 8 },
-  { id: "right_blush",label: "Blush R",   cx: 78, cy: 58, rx: 12, ry: 8 },
-];
+// ── Main component ────────────────────────────────────────────────────────────
 
-function MakeupStep({ onComplete }: { onComplete: () => void }) {
-  const [applied, setApplied] = useState<Record<string, string>>({});
-  const [activeColor, setActiveColor] = useState(PALETTE_COLORS[0]);
+type Phase = "intro" | "playing" | "transition" | "results";
 
-  const handleApply = (id: string) => {
-    const next = { ...applied, [id]: activeColor };
-    setApplied(next);
-    if (Object.keys(next).length >= MAKEUP_AREAS.length) {
-      setTimeout(onComplete, 500);
+export default function Play() {
+  const [, params] = useRoute("/play/:levelId");
+  const [, setLocation] = useLocation();
+  const { completeLevel, checkAchievements, getQualityBonus } = useGame();
+
+  const levelId = parseInt(params?.levelId ?? "1", 10);
+  const level = generateLevel(levelId);
+  const { customer, services, coinReward, gemReward, xpReward, starThresholds } = level;
+
+  const [phase, setPhase] = useState<Phase>("intro");
+  const [serviceIdx, setServiceIdx] = useState(0);
+  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [serviceScores, setServiceScores] = useState<number[]>([]);
+  const [showTransition, setShowTransition] = useState(false);
+  const [starsRevealed, setStarsRevealed] = useState(0);
+
+  const currentService = services[serviceIdx];
+  const totalScore = serviceScores.length > 0
+    ? Math.round(serviceScores.reduce((a, b) => a + b, 0) / serviceScores.length + getQualityBonus() * 0.1)
+    : 0;
+  const stars = totalScore >= starThresholds.three ? 3 : totalScore >= starThresholds.two ? 2 : totalScore >= starThresholds.one ? 1 : 0;
+  const earnedCoins = Math.round(coinReward * (totalScore / 100));
+  const earnedGems = stars === 3 ? gemReward : stars === 2 ? Math.floor(gemReward / 2) : 0;
+
+  useEffect(() => {
+    if (phase === "results") {
+      let i = 0;
+      const t = setInterval(() => {
+        i++;
+        setStarsRevealed(i);
+        if (i >= stars) clearInterval(t);
+      }, 400);
+      return () => clearInterval(t);
     }
-  };
+  }, [phase, stars]);
 
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <p className="text-sm font-semibold text-muted-foreground">Tap each area to apply makeup!</p>
+  function handleStartService() {
+    setPhase("playing");
+    setSelectedStyle(null);
+    setSelectedColor(null);
+  }
 
-      {/* Face SVG */}
-      <svg viewBox="0 0 100 100" className="w-48 h-48">
-        {/* Skin */}
-        <ellipse cx="50" cy="55" rx="38" ry="44" fill="hsl(43 50% 82%)" />
-        {/* Makeup areas */}
-        {MAKEUP_AREAS.map((area) => (
-          <ellipse
-            key={area.id}
-            cx={area.cx} cy={area.cy}
-            rx={area.rx} ry={area.ry}
-            fill={applied[area.id] ?? "rgba(255,255,255,0.2)"}
-            stroke={applied[area.id] ? "none" : "rgba(200,100,150,0.5)"}
-            strokeWidth="1"
-            strokeDasharray={applied[area.id] ? "0" : "2,2"}
-            style={{ cursor: "pointer", transition: "fill 0.3s" }}
-            onClick={() => handleApply(area.id)}
-            data-testid={`makeup-${area.id}`}
-          />
-        ))}
-        {/* Eyes base */}
-        <ellipse cx="32" cy="38" rx="8" ry="6" fill="hsl(220 20% 25%)" />
-        <ellipse cx="68" cy="38" rx="8" ry="6" fill="hsl(220 20% 25%)" />
-        <circle cx="34" cy="37" r="2" fill="white" />
-        <circle cx="70" cy="37" r="2" fill="white" />
-        {/* Nose */}
-        <path d="M48,52 Q50,58 52,52" fill="none" stroke="hsl(30 40% 65%)" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
+  function handleConfirmChoice() {
+    if (!selectedStyle) return;
+    const score = scoreService(currentService, customer, selectedStyle);
+    const newScores = [...serviceScores, score];
+    setServiceScores(newScores);
+    setShowTransition(true);
+    setTimeout(() => {
+      setShowTransition(false);
+      if (serviceIdx + 1 < services.length) {
+        setServiceIdx(serviceIdx + 1);
+        setSelectedStyle(null);
+        setSelectedColor(null);
+      } else {
+        setPhase("results");
+        const finalScore = Math.round(newScores.reduce((a, b) => a + b, 0) / newScores.length);
+        const finalStars = finalScore >= starThresholds.three ? 3 : finalScore >= starThresholds.two ? 2 : finalScore >= starThresholds.one ? 1 : 0;
+        const coins = Math.round(coinReward * (finalScore / 100));
+        const gems  = finalStars === 3 ? gemReward : finalStars === 2 ? Math.floor(gemReward / 2) : 0;
+        completeLevel(levelId, finalStars, finalScore, level.challengeType, customer.isVIP, coins, gems, xpReward);
+        checkAchievements();
+      }
+    }, 600);
+  }
 
-      {/* Progress */}
-      <p className="text-xs text-muted-foreground">{Object.keys(applied).length}/{MAKEUP_AREAS.length} areas done</p>
+  function getStyleOptions() {
+    switch (currentService) {
+      case "foundation":  return FOUNDATION_FINISHES;
+      case "eyes":        return EYE_STYLES;
+      case "lips":        return LIP_STYLES;
+      case "hair":        return HAIR_STYLES;
+      case "nails":       return NAIL_DESIGNS;
+      case "outfit":      return OUTFIT_OPTIONS;
+      case "accessories": return ACCESSORY_OPTIONS;
+      default:            return [];
+    }
+  }
 
-      {/* Color palette */}
-      <div className="flex gap-2 flex-wrap justify-center">
-        {PALETTE_COLORS.map((c) => (
-          <button
-            key={c}
-            data-testid={`palette-${c}`}
-            onClick={() => setActiveColor(c)}
-            className={`w-8 h-8 rounded-full border-4 transition-transform active:scale-90 ${
-              activeColor === c ? "border-foreground scale-110" : "border-transparent"
-            }`}
-            style={{ backgroundColor: c }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+  function getHint() {
+    const hints: Partial<Record<ServiceType, string>> = {
+      foundation:  `Prefers: ${customer.preferredFoundation} finish`,
+      eyes:        `Prefers: ${customer.preferredEyeStyle} eyes`,
+      lips:        `Prefers: ${customer.preferredLipStyle} lips`,
+      hair:        `Prefers: ${customer.preferredHairStyle} hair`,
+      nails:       `Prefers: ${customer.preferredNailDesign} nails`,
+      outfit:      `Personality: ${customer.personality}`,
+      accessories: `Challenge: ${level.challengeType}`,
+    };
+    return hints[currentService] ?? "";
+  }
 
-// ── Hairstyle step ───────────────────────────────────────────────────────────
-const HAIRSTYLES = [
-  { id: "bun",      label: "Bun",       color: "#8B5E3C", path: "M30,30 Q50,10 70,30 Q80,45 50,40 Q20,45 30,30" },
-  { id: "wavy",     label: "Wavy",      color: "#C68642", path: "M20,35 Q30,15 50,20 Q70,15 80,35 Q90,55 80,70 L70,75 Q50,80 30,75 L20,70 Q10,55 20,35" },
-  { id: "short",    label: "Short",     color: "#4A3728", path: "M25,40 Q28,20 50,18 Q72,20 75,40 Q75,50 65,52 Q50,54 35,52 Q25,50 25,40" },
-  { id: "ponytail", label: "Ponytail",  color: "#A0522D", path: "M22,38 Q25,15 50,12 Q75,15 78,38 Q78,50 70,55 L75,75 Q72,80 68,77 L65,55 Q50,58 35,55 Q22,50 22,38" },
-];
+  const bgStyle = { background: "linear-gradient(160deg,hsl(285 45% 8%),hsl(330 40% 11%),hsl(310 35% 9%))" };
 
-function HairstyleStep({ onComplete }: { onComplete: () => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
-
-  const handleSelect = (id: string) => {
-    setSelected(id);
-    setTimeout(onComplete, 600);
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <p className="text-sm font-semibold text-muted-foreground">Pick a hairstyle!</p>
-      <div className="grid grid-cols-2 gap-3 w-full">
-        {HAIRSTYLES.map((style) => (
-          <button
-            key={style.id}
-            data-testid={`style-${style.id}`}
-            onClick={() => handleSelect(style.id)}
-            className={`rounded-2xl p-3 border-2 transition-all active:scale-95 ${
-              selected === style.id ? "border-primary bg-primary/10" : "border-border bg-card"
-            }`}
-          >
-            <svg viewBox="0 0 100 90" className="w-full h-20">
-              <ellipse cx="50" cy="60" rx="30" ry="28" fill="hsl(43 50% 82%)" />
-              <path d={style.path} fill={style.color} />
-            </svg>
-            <p className="text-xs font-semibold mt-1 text-foreground">{style.label}</p>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Outfit step ──────────────────────────────────────────────────────────────
-const OUTFITS = [
-  { id: "princess", label: "Princess",  color1: "#FF6B9D", color2: "#FFB3D1" },
-  { id: "casual",   label: "Casual",    color1: "#60A5FA", color2: "#BFDBFE" },
-  { id: "sporty",   label: "Sporty",    color1: "#34D399", color2: "#A7F3D0" },
-  { id: "formal",   label: "Formal",    color1: "#8B5CF6", color2: "#DDD6FE" },
-];
-
-function OutfitStep({ onComplete }: { onComplete: () => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
-
-  const handleSelect = (id: string) => {
-    setSelected(id);
-    setTimeout(onComplete, 600);
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <p className="text-sm font-semibold text-muted-foreground">Choose an outfit!</p>
-      <div className="grid grid-cols-2 gap-3 w-full">
-        {OUTFITS.map((outfit) => (
-          <button
-            key={outfit.id}
-            data-testid={`outfit-${outfit.id}`}
-            onClick={() => handleSelect(outfit.id)}
-            className={`rounded-2xl p-3 border-2 transition-all active:scale-95 ${
-              selected === outfit.id ? "border-primary bg-primary/10" : "border-border bg-card"
-            }`}
-          >
-            <div className="flex flex-col items-center">
-              {/* Dress shape */}
-              <svg viewBox="0 0 60 70" className="w-16 h-20">
-                <circle cx="30" cy="10" r="8" fill="hsl(43 50% 82%)" />
-                <path d="M15,22 Q8,30 5,60 L55,60 Q52,30 45,22 Q40,28 30,28 Q20,28 15,22Z"
-                  fill={outfit.color1} />
-                <path d="M20,40 L40,40 L42,60 L18,60Z" fill={outfit.color2} opacity="0.7" />
-              </svg>
+  // ── INTRO PHASE ──────────────────────────────────────────────────────────────
+  if (phase === "intro") {
+    return (
+      <div className="min-h-screen flex flex-col" style={bgStyle}>
+        <div className="flex-1 flex flex-col items-center justify-center px-5 text-center">
+          {/* Customer big portrait */}
+          <div className="relative mb-6">
+            <div className="text-8xl animate-float" style={{ filter: "drop-shadow(0 0 30px rgba(255,80,150,0.5))" }}>
+              {customer.emoji}
             </div>
-            <p className="text-xs font-semibold text-center text-foreground">{outfit.label}</p>
+            {/* Emotion badge */}
+            <div className="absolute -bottom-2 -right-2 px-2 py-1 rounded-full text-xs font-bold"
+              style={{ background: "linear-gradient(135deg,#ff4d94,#c084fc)" }}>
+              {{
+                excited: "😍 Excited",  nervous: "😰 Nervous",
+                impatient: "😤 Rushed", happy: "😊 Happy",
+                demanding: "👑 Demanding", sweet: "🌸 Sweet", dramatic: "🎭 Dramatic"
+              }[customer.emotion]}
+            </div>
+          </div>
+
+          {/* Customer info card */}
+          <div className="w-full max-w-xs rounded-3xl p-5 mb-6 glass-card-pink animate-slide-up">
+            <div className="font-fredoka text-white text-2xl mb-1">{customer.name}</div>
+            <div className="text-pink-300 text-xs font-bold uppercase tracking-widest mb-3">{customer.title}</div>
+            <p className="text-white/70 text-sm leading-relaxed mb-3">"{customer.dialogues.arrival}"</p>
+            <p className="text-white/40 text-xs leading-relaxed">{customer.backstory}</p>
+          </div>
+
+          {/* Services needed */}
+          <div className="mb-6">
+            <div className="text-white/40 text-xs font-bold uppercase tracking-widest mb-2">Services Needed</div>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {services.map(s => (
+                <span key={s} className="chip glass-card text-white/80 border border-white/10">
+                  {SERVICE_META[s].emoji} {SERVICE_META[s].label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Rewards preview */}
+          <div className="flex gap-4 mb-8 text-sm font-bold">
+            <span className="text-yellow-300">🪙 up to {coinReward.toLocaleString()}</span>
+            {gemReward > 0 && <span className="text-purple-300">💎 +{gemReward}</span>}
+            <span className="text-green-300">⭐ {xpReward} XP</span>
+          </div>
+
+          {/* Start button */}
+          <button onClick={handleStartService}
+            className="w-full max-w-xs py-5 rounded-2xl font-fredoka text-2xl text-white shadow-2xl animate-pulse-glow tap-scale"
+            style={{ background: "linear-gradient(135deg,#ff4d94,#c084fc)" }}>
+            Begin Makeover ✨
           </button>
-        ))}
+
+          <button onClick={() => setLocation("/hub")} className="mt-4 text-white/30 text-sm tap-scale">
+            ← Back to Salon
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-// ── Nail painting step ───────────────────────────────────────────────────────
-const NAIL_COLORS = ["#FF6B9D","#C084FC","#FB923C","#34D399","#60A5FA","#F472B6","#FBBF24","#F43F5E"];
+  // ── TRANSITION ───────────────────────────────────────────────────────────────
+  if (showTransition) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={bgStyle}>
+        <div className="text-center animate-bounce-in">
+          <div className="text-6xl mb-4">✨</div>
+          <div className="font-fredoka text-white text-2xl">Service Complete!</div>
+          <div className="text-white/50 mt-1">Score: {serviceScores[serviceScores.length - 1] ?? 0}/100</div>
+        </div>
+      </div>
+    );
+  }
 
-function NailStep({ onComplete }: { onComplete: () => void }) {
-  const [nailColors, setNailColors] = useState<(string | null)[]>(Array(5).fill(null));
-  const [activeColor, setActiveColor] = useState(NAIL_COLORS[0]);
+  // ── PLAYING PHASE ────────────────────────────────────────────────────────────
+  if (phase === "playing") {
+    const styleOptions = getStyleOptions();
+    const colors = COLOR_SWATCHES[currentService] ?? [];
+    const meta = SERVICE_META[currentService];
+    const needsColor = colors.length > 0;
 
-  const paintNail = (idx: number) => {
-    const next = [...nailColors];
-    next[idx] = activeColor;
-    setNailColors(next);
-    if (next.every(Boolean)) setTimeout(onComplete, 400);
-  };
+    return (
+      <div className="min-h-screen flex flex-col" style={bgStyle}>
+        {/* Progress header */}
+        <div className="px-4 pt-10 pb-4"
+          style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(10px)" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <button onClick={() => setLocation("/hub")} className="text-white/40 text-sm">←</button>
+            <div className="flex gap-1.5 flex-1 justify-center">
+              {services.map((s, i) => (
+                <div key={s} className="h-1.5 rounded-full flex-1 max-w-8 transition-all duration-300"
+                  style={{
+                    background: i < serviceIdx ? "#ff4d94" : i === serviceIdx ? "#c084fc" : "rgba(255,255,255,0.12)",
+                    boxShadow: i === serviceIdx ? "0 0 8px #c084fc" : undefined,
+                  }} />
+              ))}
+            </div>
+            <span className="text-white/40 text-xs font-bold">{serviceIdx + 1}/{services.length}</span>
+          </div>
 
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <p className="text-sm font-semibold text-muted-foreground">Paint all the nails!</p>
+          {/* Customer mini */}
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{customer.emoji}</span>
+            <div>
+              <div className="font-fredoka text-white text-sm">{customer.name}</div>
+              <div className="text-pink-300/80 text-xs italic">{getHint()}</div>
+            </div>
+            <div className="ml-auto">
+              <div className="text-white/50 text-xs font-bold mb-0.5">{meta.emoji} {meta.label}</div>
+            </div>
+          </div>
+        </div>
 
-      {/* Hand SVG */}
-      <svg viewBox="0 0 200 120" className="w-64 h-40">
-        {/* Palm */}
-        <path d="M30,110 Q30,80 40,70 L160,70 Q170,80 170,110Z" fill="hsl(43 50% 82%)" />
-        {/* Fingers */}
-        {[30,65,100,135,162].map((x, i) => (
-          <g key={i} onClick={() => paintNail(i)} style={{ cursor: "pointer" }} data-testid={`nail-${i}`}>
-            <rect
-              x={x - 12} y={i === 0 ? 50 : 25}
-              width={24} height={i === 0 ? 20 : 45}
-              rx="12"
-              fill="hsl(43 50% 82%)"
-            />
-            {/* Nail */}
-            <rect
-              x={x - 9} y={i === 0 ? 52 : 27}
-              width={18} height={14}
-              rx="9"
-              fill={nailColors[i] ?? "hsl(0 0% 88%)"}
-              className="transition-all"
-            />
-          </g>
-        ))}
-      </svg>
+        {/* Service choice area */}
+        <div className="flex-1 px-4 py-4 overflow-y-auto no-scrollbar">
 
-      <p className="text-xs text-muted-foreground">{nailColors.filter(Boolean).length}/5 nails painted</p>
+          {/* Customer dialogue */}
+          <div className="rounded-2xl p-3 mb-4 glass-card border border-white/10">
+            <p className="text-white/70 text-sm italic text-center">
+              "{customer.dialogues.excited}"
+            </p>
+          </div>
 
-      {/* Color picker */}
-      <div className="flex gap-2 flex-wrap justify-center">
-        {NAIL_COLORS.map((c) => (
+          {/* Style options */}
+          <div className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2">Choose Style</div>
+          <div className={`grid gap-2 mb-4 ${styleOptions.length <= 4 ? "grid-cols-2" : "grid-cols-3"}`}>
+            {styleOptions.map(opt => {
+              const sel = selectedStyle === opt.id;
+              return (
+                <button key={opt.id} onClick={() => setSelectedStyle(opt.id)}
+                  className="flex flex-col items-center gap-1.5 py-4 px-2 rounded-2xl tap-scale transition-all duration-200"
+                  style={{
+                    background: sel ? "linear-gradient(135deg,rgba(255,80,150,0.3),rgba(180,80,255,0.2))" : "rgba(255,255,255,0.05)",
+                    border: sel ? "2px solid #ff4d94" : "1px solid rgba(255,255,255,0.1)",
+                    boxShadow: sel ? "0 0 16px rgba(255,80,150,0.4)" : undefined,
+                    transform: sel ? "scale(1.04)" : undefined,
+                  }}>
+                  <span className="text-3xl">{opt.emoji}</span>
+                  <span className="text-white text-xs font-bold">{opt.label}</span>
+                  <span className="text-white/40 text-[10px] text-center">{opt.desc}</span>
+                  {sel && <div className="text-pink-400 text-sm">✓</div>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Color palette (if applicable) */}
+          {needsColor && (
+            <>
+              <div className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2">Choose Color</div>
+              <div className="flex flex-wrap gap-2.5 mb-4">
+                {colors.map(c => {
+                  const sel = selectedColor === c.id;
+                  return (
+                    <button key={c.id} onClick={() => setSelectedColor(c.id)}
+                      className="flex flex-col items-center gap-1 tap-scale"
+                      title={c.label}>
+                      <div className="w-9 h-9 rounded-full transition-all duration-200"
+                        style={{
+                          background: c.hex,
+                          border: sel ? "3px solid white" : "2px solid rgba(255,255,255,0.2)",
+                          boxShadow: sel ? `0 0 12px ${c.hex}, 0 0 24px ${c.hex}60` : undefined,
+                          transform: sel ? "scale(1.2)" : undefined,
+                        }} />
+                      <span className="text-white/40 text-[9px] font-bold">{c.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Score preview */}
+          {selectedStyle && (
+            <div className="rounded-2xl p-3 mb-4 animate-slide-up glass-card border border-white/10">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-white/60 text-xs font-bold">Preview Score</span>
+                <span className="text-pink-300 text-xs font-bold">
+                  {selectedStyle === (
+                    { foundation: customer.preferredFoundation, eyes: customer.preferredEyeStyle,
+                      lips: customer.preferredLipStyle, hair: customer.preferredHairStyle,
+                      nails: customer.preferredNailDesign }[currentService]
+                  ) ? "✨ Perfect Match!" : "Good choice"}
+                </span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                <div className="h-full rounded-full transition-all duration-500 progress-glow"
+                  style={{
+                    width: selectedStyle === (
+                      { foundation: customer.preferredFoundation, eyes: customer.preferredEyeStyle,
+                        lips: customer.preferredLipStyle, hair: customer.preferredHairStyle,
+                        nails: customer.preferredNailDesign }[currentService]
+                    ) ? "90%" : "55%",
+                    background: "linear-gradient(90deg,#ff4d94,#c084fc)",
+                  }} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Confirm button */}
+        <div className="px-4 pb-8 pt-2" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)" }}>
           <button
-            key={c}
-            data-testid={`nail-color-${c}`}
-            onClick={() => setActiveColor(c)}
-            className={`w-8 h-8 rounded-full border-4 transition-transform active:scale-90 ${
-              activeColor === c ? "border-foreground scale-110" : "border-transparent"
-            }`}
-            style={{ backgroundColor: c }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Level Complete Modal ─────────────────────────────────────────────────────
-function LevelComplete({
-  stars, coins, xp, onNext, onReplay, levelId,
-}: {
-  stars: number; coins: number; xp: number; onNext: () => void; onReplay: () => void; levelId: string;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6">
-      <div className="bg-card rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center animate-in zoom-in-95">
-        {/* Confetti dots */}
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-3 h-3 rounded-full pointer-events-none"
+            onClick={handleConfirmChoice}
+            disabled={!selectedStyle}
+            className="w-full py-4 rounded-2xl font-fredoka text-xl text-white transition-all duration-200 tap-scale"
             style={{
-              backgroundColor: PALETTE_COLORS[i % PALETTE_COLORS.length],
-              top: `${10 + Math.random() * 40}%`,
-              left: `${Math.random() * 100}%`,
-              animation: `confetti-fall ${1 + Math.random()}s ${Math.random()}s linear forwards`,
-            }}
-          />
-        ))}
+              background: selectedStyle ? "linear-gradient(135deg,#ff4d94,#c084fc)" : "rgba(255,255,255,0.1)",
+              opacity: selectedStyle ? 1 : 0.5,
+              boxShadow: selectedStyle ? "0 0 20px rgba(255,80,150,0.5)" : undefined,
+            }}>
+            {serviceIdx + 1 < services.length ? `Next: ${SERVICE_META[services[serviceIdx + 1]].label} →` : "Finish Makeover ✨"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-        <h2 className="font-fredoka text-3xl text-primary mb-1">Level Complete!</h2>
-        <p className="text-sm text-muted-foreground mb-4">Amazing makeover!</p>
+  // ── RESULTS PHASE ─────────────────────────────────────────────────────────────
+  const reaction = totalScore >= 85 ? customer.dialogues.happy
+    : totalScore >= 60 ? customer.dialogues.neutral
+    : customer.dialogues.disappointed;
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-5 text-center" style={bgStyle}>
+      {stars === 3 && <Confetti />}
+
+      <div className="w-full max-w-sm">
+        {/* Customer reaction */}
+        <div className="text-7xl mb-4 animate-bounce-in"
+          style={{ filter: `drop-shadow(0 0 30px rgba(255,${stars === 3 ? "200,60" : "80,150"},0.6))` }}>
+          {customer.emoji}
+        </div>
 
         {/* Stars */}
-        <div className="flex justify-center gap-2 mb-5">
-          {[1, 2, 3].map((s) => (
-            <Star
-              key={s}
-              size={36}
-              className={`transition-all ${stars >= s ? "text-yellow-400 fill-yellow-400 scale-110" : "text-muted"}`}
-            />
+        <div className="flex justify-center gap-3 mb-4">
+          {[1, 2, 3].map(n => (
+            <div key={n} className="text-5xl transition-all duration-300"
+              style={{
+                opacity: starsRevealed >= n ? 1 : 0.15,
+                transform: starsRevealed >= n ? "scale(1)" : "scale(0.5)",
+                filter: starsRevealed >= n ? "drop-shadow(0 0 12px #FFD700)" : undefined,
+                animationDelay: `${n * 0.4}s`,
+              }}>
+              {n <= stars ? "⭐" : "☆"}
+            </div>
           ))}
+        </div>
+
+        {/* Score */}
+        <div className="font-fredoka text-white text-5xl mb-1 animate-slide-up">{totalScore}%</div>
+        <div className="text-white/50 text-sm mb-4">
+          {totalScore >= 85 ? "Flawless!" : totalScore >= 65 ? "Great Job!" : totalScore >= 45 ? "Not Bad!" : "Keep Practicing!"}
+        </div>
+
+        {/* Customer dialogue */}
+        <div className="rounded-2xl p-4 mb-5 glass-card-pink animate-slide-up">
+          <p className="text-white text-sm italic">"{reaction}"</p>
+          <p className="text-pink-300/60 text-xs mt-2 font-semibold">— {customer.name}</p>
         </div>
 
         {/* Rewards */}
-        <div className="flex justify-center gap-4 mb-6">
-          <div className="bg-primary/10 rounded-2xl px-4 py-3">
-            <div className="flex items-center gap-1 font-fredoka text-xl text-primary">
-              <Coins size={18} />+{coins}
-            </div>
-            <p className="text-xs text-muted-foreground">Coins</p>
+        <div className="flex justify-center gap-4 mb-6 animate-slide-up">
+          <div className="rounded-2xl px-4 py-3 text-center glass-card-gold">
+            <div className="text-2xl font-fredoka text-yellow-300">+{earnedCoins.toLocaleString()}</div>
+            <div className="text-yellow-200/60 text-xs font-bold">COINS 🪙</div>
           </div>
-          <div className="bg-secondary/10 rounded-2xl px-4 py-3">
-            <div className="flex items-center gap-1 font-fredoka text-xl text-secondary">
-              <Zap size={18} />+{xp}
+          {earnedGems > 0 && (
+            <div className="rounded-2xl px-4 py-3 text-center glass-card">
+              <div className="text-2xl font-fredoka text-purple-300">+{earnedGems}</div>
+              <div className="text-purple-200/60 text-xs font-bold">GEMS 💎</div>
             </div>
-            <p className="text-xs text-muted-foreground">XP</p>
+          )}
+          <div className="rounded-2xl px-4 py-3 text-center glass-card">
+            <div className="text-2xl font-fredoka text-green-300">+{xpReward}</div>
+            <div className="text-green-200/60 text-xs font-bold">XP ⭐</div>
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={onReplay} className="flex-1">
-            Replay
-          </Button>
-          <Button onClick={onNext} className="flex-1 font-fredoka text-base">
-            Next Level
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Main Play page ───────────────────────────────────────────────────────────
-export default function Play() {
-  const [, params] = useRoute("/play/:levelId");
-  const levelId = params?.levelId ?? "1";
-  const level = getLevelById(levelId);
-  const { completeLevel, addXP, unlockAchievement, checkAchievements } = useGame();
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-
-  const [currentStep, setCurrentStep] = useState(0);
-  const [completed, setCompleted] = useState(false);
-  const [startTime] = useState(Date.now());
-
-  useEffect(() => {
-    if (!level) setLocation("/levels");
-  }, [level, setLocation]);
-
-  if (!level) return null;
-
-  const steps = level.steps;
-  const stepProgress = Math.round((currentStep / steps.length) * 100);
-
-  const handleStepComplete = () => {
-    if (currentStep + 1 >= steps.length) {
-      const elapsed = (Date.now() - startTime) / 1000;
-      const stars = elapsed < 30 ? 3 : elapsed < 60 ? 2 : 1;
-      const coinsEarned = Math.floor(level.coinReward * (stars / 3));
-      const xpEarned = Math.floor(level.xpReward * (stars / 3));
-
-      completeLevel(levelId, stars, coinsEarned);
-      addXP(xpEarned);
-
-      // Achievements
-      unlockAchievement("first_play");
-      steps.forEach((s) => {
-        if (s === "shaving") unlockAchievement("first_shave");
-        if (s === "makeup") unlockAchievement("makeover_artist");
-        if (s === "nails") unlockAchievement("nail_painter");
-        if (s === "hairstyle") unlockAchievement("hairstylist");
-        if (s === "outfit") unlockAchievement("fashionista");
-      });
-      if (stars === 3) unlockAchievement("three_stars");
-      if (elapsed < 30) unlockAchievement("speed_run");
-      checkAchievements();
-
-      setCompleted(true);
-    } else {
-      toast({ title: "Step complete!", description: "Keep going!" });
-      setCurrentStep((p) => p + 1);
-    }
-  };
-
-  const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
-  const estimatedStars = elapsedSec < 30 ? 3 : elapsedSec < 60 ? 2 : 1;
-  const coinsEarned = Math.floor(level.coinReward * (estimatedStars / 3));
-  const xpEarned = Math.floor(level.xpReward * (estimatedStars / 3));
-
-  const renderStep = (stepType: StepType) => {
-    switch (stepType) {
-      case "shaving":   return <ScrubStep type="shaving" onComplete={handleStepComplete} key={currentStep} />;
-      case "washing":   return <ScrubStep type="washing" onComplete={handleStepComplete} key={currentStep} />;
-      case "makeup":    return <MakeupStep onComplete={handleStepComplete} key={currentStep} />;
-      case "hairstyle": return <HairstyleStep onComplete={handleStepComplete} key={currentStep} />;
-      case "outfit":    return <OutfitStep onComplete={handleStepComplete} key={currentStep} />;
-      case "nails":     return <NailStep onComplete={handleStepComplete} key={currentStep} />;
-    }
-  };
-
-  const STEP_LABELS: Record<StepType, string> = {
-    shaving: "Shaving", washing: "Face Wash",
-    makeup: "Makeup", hairstyle: "Hairstyle",
-    outfit: "Outfit", nails: "Nails",
-  };
-
-  return (
-    <div className="min-h-screen bg-background pb-6">
-      <CoinBar />
-      <div className="pt-14 px-4 max-w-md mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-3 py-3">
-          <Link href="/levels">
-            <button className="p-2 rounded-xl bg-card border border-border">
-              <ChevronLeft size={20} />
+        {/* Buttons */}
+        <div className="space-y-3">
+          <button onClick={() => setLocation(`/play/${levelId + 1}`)}
+            className="w-full py-4 rounded-2xl font-fredoka text-xl text-white tap-scale animate-pulse-glow"
+            style={{ background: "linear-gradient(135deg,#ff4d94,#c084fc)" }}>
+            Next Client ✨
+          </button>
+          <div className="flex gap-3">
+            <button onClick={() => {
+              setPhase("intro");
+              setServiceIdx(0);
+              setSelectedStyle(null);
+              setSelectedColor(null);
+              setServiceScores([]);
+              setStarsRevealed(0);
+            }}
+              className="flex-1 py-3 rounded-2xl font-semibold text-white/70 glass-card tap-scale">
+              ↻ Retry
             </button>
-          </Link>
-          <div className="flex-1">
-            <h1 className="font-fredoka text-lg leading-tight">{level.name}</h1>
-            <p className="text-xs text-muted-foreground">
-              Level {level.id} •{" "}
-              <span className={`font-semibold ${DIFFICULTY_BG[level.difficulty].split(" ")[1]}`}>
-                {level.difficulty}
-              </span>
-            </p>
+            <button onClick={() => setLocation("/hub")}
+              className="flex-1 py-3 rounded-2xl font-semibold text-white/70 glass-card tap-scale">
+              🏠 Home
+            </button>
           </div>
-          <div className="flex items-center gap-1 bg-amber-100 rounded-xl px-2 py-1">
-            <Coins size={12} className="text-amber-600" />
-            <span className="text-xs font-bold text-amber-700">{level.coinReward}</span>
-          </div>
-        </div>
-
-        {/* Step progress */}
-        <div className="flex items-center gap-2 mb-4">
-          {steps.map((step, i) => (
-            <div
-              key={i}
-              className={`flex-1 flex flex-col items-center gap-1`}
-            >
-              <div className={`w-full h-2 rounded-full ${
-                i < currentStep ? "bg-primary" :
-                i === currentStep ? "bg-primary/40" :
-                "bg-muted"
-              }`} />
-              <span className={`text-[10px] font-semibold ${
-                i <= currentStep ? "text-primary" : "text-muted-foreground"
-              }`}>
-                {i < currentStep && <Check size={10} className="inline mr-0.5" />}
-                {STEP_LABELS[step]}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Step content */}
-        <div className="bg-card border border-border rounded-3xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-fredoka text-lg text-foreground">
-              Step {currentStep + 1}: {STEP_LABELS[steps[currentStep]]}
-            </h2>
-            <span className="text-xs text-muted-foreground">{currentStep + 1}/{steps.length}</span>
-          </div>
-          {renderStep(steps[currentStep])}
         </div>
       </div>
-
-      {completed && (
-        <LevelComplete
-          stars={estimatedStars}
-          coins={coinsEarned}
-          xp={xpEarned}
-          onNext={() => setLocation(`/play/${parseInt(levelId) + 1}`)}
-          onReplay={() => { setCompleted(false); setCurrentStep(0); }}
-          levelId={levelId}
-        />
-      )}
     </div>
   );
 }

@@ -1,89 +1,135 @@
+import { useState } from "react";
 import { useGame } from "@/context/GameContext";
-import CoinBar from "@/components/CoinBar";
 import NavBar from "@/components/NavBar";
-import { ChevronLeft, Sparkles, Scissors, Star, Trophy, Crown, Flame, Coins, Gem, RefreshCw, Zap, Palette, Wind, Shirt, CalendarCheck, ShoppingBag, Users } from "lucide-react";
-import { Link } from "wouter";
-import { ACHIEVEMENTS } from "@/data/achievements";
+import CoinBar from "@/components/CoinBar";
+import { ACHIEVEMENTS, Achievement } from "@/data/achievements";
 
-const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  Sparkles, Scissors, Star, Trophy, Crown, Flame, Coins, Gem,
-  RefreshCw, Zap, Palette, Wind, Shirt, CalendarCheck, ShoppingBag, Users,
+const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
+  all:      { label: "All",      emoji: "🏅" },
+  progress: { label: "Progress", emoji: "📈" },
+  mastery:  { label: "Mastery",  emoji: "⭐" },
+  currency: { label: "Currency", emoji: "🪙" },
+  streak:   { label: "Streak",   emoji: "🔥" },
+  special:  { label: "Special",  emoji: "✨" },
+};
+
+const RARITY_STYLE: Record<Achievement["rarity"], { border: string; glow: string; label: string }> = {
+  common:    { border: "rgba(160,160,160,0.3)", glow: "none",                              label: "Common"    },
+  rare:      { border: "rgba(77,166,255,0.5)",  glow: "0 0 12px rgba(77,166,255,0.3)",    label: "Rare"      },
+  epic:      { border: "rgba(201,126,247,0.5)", glow: "0 0 12px rgba(201,126,247,0.4)",   label: "Epic"      },
+  legendary: { border: "rgba(255,215,0,0.6)",   glow: "0 0 16px rgba(255,215,0,0.5)",     label: "Legendary" },
 };
 
 export default function Achievements() {
   const { user } = useGame();
-  if (!user) return null;
+  const [activeCategory, setActiveCategory] = useState("all");
 
-  const unlocked = user.achievements;
-  const unlockedCount = unlocked.length;
+  const unlocked = user?.achievements ?? [];
+  const totalUnlocked = unlocked.length;
+  const totalPossible = ACHIEVEMENTS.length;
+
+  const filtered = activeCategory === "all"
+    ? ACHIEVEMENTS
+    : ACHIEVEMENTS.filter(a => a.category === activeCategory);
+
+  const categories = ["all", "progress", "mastery", "currency", "streak", "special"];
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <CoinBar />
-      <div className="pt-14 px-4 max-w-md mx-auto">
-        <div className="flex items-center gap-3 py-3">
-          <Link href="/hub">
-            <button className="p-2 rounded-xl bg-card border border-border">
-              <ChevronLeft size={20} />
-            </button>
-          </Link>
-          <h1 className="font-fredoka text-2xl">Achievements</h1>
-          <span className="ml-auto font-fredoka text-base text-muted-foreground">
-            {unlockedCount}/{ACHIEVEMENTS.length}
-          </span>
-        </div>
+    <div className="min-h-screen pb-24" style={{ background: "linear-gradient(160deg,hsl(285 40% 8%),hsl(330 35% 11%),hsl(310 30% 9%))" }}>
+      <CoinBar title="Achievements" showBack />
 
-        {/* Progress bar */}
-        <div className="bg-card border border-border rounded-2xl p-4 mb-4">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="font-semibold">Collection Progress</span>
-            <span className="text-primary font-fredoka">{Math.round((unlockedCount / ACHIEVEMENTS.length) * 100)}%</span>
+      <div className="px-4 max-w-lg mx-auto mt-4">
+
+        {/* Progress card */}
+        <div className="rounded-2xl p-4 glass-card-pink mb-5 animate-slide-up">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="font-fredoka text-white text-xl">{totalUnlocked}/{totalPossible}</div>
+              <div className="text-white/50 text-xs font-bold">Achievements Unlocked</div>
+            </div>
+            <div className="text-4xl animate-float">🏆</div>
           </div>
-          <div className="h-3 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all"
-              style={{ width: `${(unlockedCount / ACHIEVEMENTS.length) * 100}%` }}
-            />
+          <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+            <div className="h-full rounded-full progress-glow transition-all duration-700"
+              style={{ width: `${(totalUnlocked / totalPossible) * 100}%`, background: "linear-gradient(90deg,#FFD700,#FF9A3C)" }} />
+          </div>
+          <div className="text-right text-xs text-white/40 font-bold mt-1">
+            {Math.round((totalUnlocked / totalPossible) * 100)}% Complete
           </div>
         </div>
 
-        {/* Achievement grid */}
-        <div className="grid grid-cols-3 gap-3">
-          {ACHIEVEMENTS.map(ach => {
-            const isUnlocked = unlocked.includes(ach.id);
-            const IconComp = ICON_MAP[ach.icon] ?? Star;
+        {/* Category filter */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
+          {categories.map(cat => {
+            const meta = CATEGORY_LABELS[cat];
+            const active = activeCategory === cat;
             return (
-              <div
-                key={ach.id}
-                data-testid={`achievement-${ach.id}`}
-                className={`flex flex-col items-center p-3 rounded-2xl border transition-all ${
-                  isUnlocked
-                    ? "bg-primary/10 border-primary/40"
-                    : "bg-muted/50 border-transparent opacity-50"
-                }`}
-              >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 ${
-                  isUnlocked
-                    ? "bg-gradient-to-br from-primary to-secondary"
-                    : "bg-muted"
-                }`}>
-                  <IconComp
-                    size={22}
-                    className={isUnlocked ? "text-white" : "text-muted-foreground"}
-                  />
+              <button key={cat} onClick={() => setActiveCategory(cat)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 tap-scale transition-all"
+                style={{
+                  background: active ? "linear-gradient(135deg,rgba(255,200,60,0.3),rgba(255,150,0,0.2))" : "rgba(255,255,255,0.05)",
+                  border: active ? "1px solid rgba(255,200,60,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                  color: active ? "#FFD700" : "rgba(255,255,255,0.5)",
+                }}>
+                {meta.emoji} {meta.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Achievement list */}
+        <div className="space-y-2.5">
+          {filtered.map(ach => {
+            const isUnlocked = unlocked.includes(ach.id);
+            const rarity = RARITY_STYLE[ach.rarity];
+
+            return (
+              <div key={ach.id}
+                className="rounded-2xl p-4 flex items-center gap-3 transition-all"
+                style={{
+                  background: isUnlocked ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${isUnlocked ? rarity.border : "rgba(255,255,255,0.07)"}`,
+                  boxShadow: isUnlocked ? rarity.glow : undefined,
+                  opacity: isUnlocked ? 1 : 0.6,
+                }}>
+                {/* Icon */}
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0"
+                  style={{
+                    background: isUnlocked ? `rgba(255,255,255,0.1)` : "rgba(255,255,255,0.04)",
+                    filter: isUnlocked ? undefined : "grayscale(1) brightness(0.4)",
+                  }}>
+                  {isUnlocked ? ach.icon : "🔒"}
                 </div>
-                <p className="text-[11px] font-semibold text-center leading-tight text-foreground">{ach.name}</p>
-                <p className="text-[9px] text-center text-muted-foreground mt-0.5 leading-tight">{ach.description}</p>
-                {isUnlocked && (
-                  <div className="mt-1 bg-primary/20 rounded-full px-2 py-0.5">
-                    <span className="text-[9px] text-primary font-bold">Unlocked!</span>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="font-fredoka text-white text-sm">{ach.name}</span>
+                    <span className={`text-[10px] font-bold rarity-${ach.rarity}`}>{rarity.label}</span>
                   </div>
-                )}
+                  <div className="text-white/45 text-xs">{ach.description}</div>
+                  {isUnlocked && (
+                    <div className="flex items-center gap-2 mt-1">
+                      {ach.rewardCoins > 0 && <span className="text-yellow-300 text-[11px] font-bold">🪙 +{ach.rewardCoins}</span>}
+                      {ach.rewardGems > 0 && <span className="text-purple-300 text-[11px] font-bold">💎 +{ach.rewardGems}</span>}
+                    </div>
+                  )}
+                </div>
+
+                {/* Status */}
+                <div className="shrink-0">
+                  {isUnlocked ? (
+                    <div className="text-2xl" style={{ filter: "drop-shadow(0 0 6px rgba(255,215,0,0.6))" }}>✅</div>
+                  ) : (
+                    <div className="text-white/20 text-xl">○</div>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       </div>
+
       <NavBar />
     </div>
   );

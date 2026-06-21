@@ -1,149 +1,140 @@
 import { useGame } from "@/context/GameContext";
-import CoinBar from "@/components/CoinBar";
 import NavBar from "@/components/NavBar";
-import { ChevronLeft, Trophy, Crown } from "lucide-react";
-import { Link } from "wouter";
-import { AVATAR_COLORS } from "@/hooks/useGameStore";
-import { useState } from "react";
+import CoinBar from "@/components/CoinBar";
 
-type Tab = "alltime" | "weekly" | "monthly";
+const AVATAR_EMOJIS = ["👩‍🦱","👩‍🦰","👩‍🦳","👩","🧕","👩‍🦲","🧑","👱‍♀️"];
+const AVATAR_KEYS   = ["avatar1","avatar2","avatar3","avatar4","avatar5","avatar6","avatar7","avatar8"];
+
+const RANK_STYLES: Record<number, { emoji: string; glow: string; bg: string }> = {
+  1: { emoji: "👑", glow: "0 0 20px rgba(255,215,0,0.6)",   bg: "linear-gradient(135deg,rgba(255,200,60,0.25),rgba(255,150,0,0.15))" },
+  2: { emoji: "🥈", glow: "0 0 12px rgba(192,192,192,0.5)", bg: "linear-gradient(135deg,rgba(192,192,192,0.18),rgba(150,150,150,0.1))" },
+  3: { emoji: "🥉", glow: "0 0 12px rgba(205,127,50,0.5)",  bg: "linear-gradient(135deg,rgba(205,127,50,0.2),rgba(150,80,20,0.12))" },
+};
 
 export default function Leaderboard() {
   const { leaderboard, user } = useGame();
-  const [tab, setTab] = useState<Tab>("alltime");
 
-  // Simulate weekly/monthly by shuffling scores
-  const getBoard = () => {
-    if (tab === "alltime") return leaderboard;
-    const factor = tab === "weekly" ? 0.3 : 0.6;
-    return [...leaderboard]
-      .map(e => ({ ...e, score: Math.floor(e.score * (factor + Math.random() * 0.4)) }))
-      .sort((a, b) => b.score - a.score);
-  };
-
-  const board = getBoard();
-  const myRank = user ? board.findIndex(e => e.id === user.id) + 1 : -1;
-
-  const MEDAL = ["🥇","🥈","🥉"];
+  const myEntry = leaderboard.find(e => e.id === user?.id);
+  const myRank = myEntry ? leaderboard.findIndex(e => e.id === user?.id) + 1 : null;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <CoinBar />
-      <div className="pt-14 px-4 max-w-md mx-auto">
-        <div className="flex items-center gap-3 py-3">
-          <Link href="/hub">
-            <button className="p-2 rounded-xl bg-card border border-border">
-              <ChevronLeft size={20} />
-            </button>
-          </Link>
-          <h1 className="font-fredoka text-2xl">Leaderboard</h1>
-          <Trophy size={20} className="ml-auto text-amber-500" />
-        </div>
+    <div className="min-h-screen pb-24" style={{ background: "linear-gradient(160deg,hsl(285 40% 8%),hsl(330 35% 11%),hsl(310 30% 9%))" }}>
+      <CoinBar title="Leaderboard" showBack />
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-4">
-          {(["alltime","weekly","monthly"] as Tab[]).map(t => (
-            <button
-              key={t}
-              data-testid={`tab-${t}`}
-              onClick={() => setTab(t)}
-              className={`flex-1 py-2 rounded-xl text-sm font-semibold capitalize transition-all ${
-                tab === t ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {t === "alltime" ? "All Time" : t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
-          ))}
-        </div>
+      <div className="px-4 max-w-lg mx-auto mt-4">
 
         {/* Top 3 podium */}
-        {board.length >= 3 && (
-          <div className="flex items-end justify-center gap-4 mb-6">
-            {[board[1], board[0], board[2]].map((entry, idx) => {
-              const rank = idx === 1 ? 1 : idx === 0 ? 2 : 3;
-              const heights = [20, 28, 16];
-              return (
-                <div key={entry.id} className="flex flex-col items-center">
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center font-fredoka text-white text-xl border-2 border-white shadow-md mb-1"
-                    style={{ backgroundColor: AVATAR_COLORS[entry.avatar] ?? "#FF6B9D" }}
-                  >
-                    {entry.avatar.replace("avatar", "")}
-                  </div>
-                  {rank === 1 && <Crown size={16} className="text-amber-500 -mb-1" />}
-                  <div
-                    className={`w-16 flex flex-col items-center justify-end rounded-t-2xl pt-2 text-white`}
-                    style={{
-                      height: `${heights[idx] * 4}px`,
-                      background: rank === 1
-                        ? "linear-gradient(180deg, hsl(43 92% 58%), hsl(38 85% 65%))"
-                        : rank === 2
-                        ? "linear-gradient(180deg, hsl(220 15% 75%), hsl(220 15% 65%))"
-                        : "linear-gradient(180deg, hsl(25 70% 58%), hsl(25 70% 50%))",
-                    }}
-                  >
-                    <span className="font-fredoka text-sm">{rank}</span>
-                  </div>
-                  <p className="text-xs font-semibold mt-1 text-center w-16 truncate">{entry.username}</p>
-                  <p className="text-[10px] text-muted-foreground">{entry.score.toLocaleString()}</p>
-                </div>
-              );
-            })}
+        {leaderboard.length >= 3 && (
+          <div className="flex items-end justify-center gap-2 mb-6 mt-2">
+            {/* 2nd */}
+            <div className="flex flex-col items-center gap-1">
+              <div className="text-3xl">{AVATAR_EMOJIS[AVATAR_KEYS.indexOf(leaderboard[1].avatar)] ?? "👩"}</div>
+              <div className="text-white/70 font-fredoka text-xs text-center truncate w-16">{leaderboard[1].username}</div>
+              <div className="w-14 py-4 rounded-t-2xl flex flex-col items-center"
+                style={{ background: "rgba(192,192,192,0.15)", border: "1px solid rgba(192,192,192,0.25)" }}>
+                <span className="text-xl">🥈</span>
+                <span className="text-white text-xs font-bold mt-1">2nd</span>
+              </div>
+            </div>
+            {/* 1st */}
+            <div className="flex flex-col items-center gap-1">
+              <div className="text-4xl animate-float">{AVATAR_EMOJIS[AVATAR_KEYS.indexOf(leaderboard[0].avatar)] ?? "👩"}</div>
+              <div className="text-white font-fredoka text-sm text-center truncate w-20">{leaderboard[0].username}</div>
+              <div className="w-16 py-6 rounded-t-2xl flex flex-col items-center"
+                style={{ background: "linear-gradient(180deg,rgba(255,200,60,0.3),rgba(255,150,0,0.15))", border: "1px solid rgba(255,200,60,0.4)", boxShadow: "0 0 20px rgba(255,200,60,0.3)" }}>
+                <span className="text-2xl">👑</span>
+                <span className="text-yellow-300 text-xs font-bold mt-1">1st</span>
+              </div>
+            </div>
+            {/* 3rd */}
+            <div className="flex flex-col items-center gap-1">
+              <div className="text-3xl">{AVATAR_EMOJIS[AVATAR_KEYS.indexOf(leaderboard[2].avatar)] ?? "👩"}</div>
+              <div className="text-white/70 font-fredoka text-xs text-center truncate w-16">{leaderboard[2].username}</div>
+              <div className="w-14 py-3 rounded-t-2xl flex flex-col items-center"
+                style={{ background: "rgba(205,127,50,0.15)", border: "1px solid rgba(205,127,50,0.25)" }}>
+                <span className="text-xl">🥉</span>
+                <span className="text-white text-xs font-bold mt-1">3rd</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Your rank card */}
+        {myEntry && myRank && (
+          <div className="rounded-2xl p-3.5 mb-4 flex items-center gap-3 animate-slide-up"
+            style={{ background: "linear-gradient(135deg,rgba(255,80,150,0.2),rgba(180,80,255,0.15))", border: "1px solid rgba(255,80,150,0.4)" }}>
+            <div className="text-white/60 font-fredoka text-xl w-8 text-center">#{myRank}</div>
+            <div className="text-2xl">{AVATAR_EMOJIS[AVATAR_KEYS.indexOf(myEntry.avatar)] ?? "👩"}</div>
+            <div className="flex-1">
+              <div className="font-fredoka text-white text-sm">You · {myEntry.username}</div>
+              <div className="text-white/40 text-xs">{myEntry.salonName}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-yellow-300 font-bold text-sm">{myEntry.score.toLocaleString()}</div>
+              <div className="text-white/40 text-xs">pts</div>
+            </div>
           </div>
         )}
 
         {/* Full list */}
         <div className="space-y-2">
-          {board.slice(0, 20).map((entry, idx) => {
-            const rank = idx + 1;
+          {leaderboard.map((entry, i) => {
+            const rank = i + 1;
+            const rankStyle = RANK_STYLES[rank];
             const isMe = entry.id === user?.id;
+            const avatarEmoji = AVATAR_EMOJIS[AVATAR_KEYS.indexOf(entry.avatar)] ?? "👩";
+
             return (
-              <div
-                key={entry.id}
-                data-testid={`leaderboard-row-${rank}`}
-                className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
-                  isMe ? "bg-primary/10 border-primary/30" : "bg-card border-border"
-                }`}
-              >
-                <div className="w-7 text-center font-fredoka text-base text-muted-foreground">
-                  {rank <= 3 ? MEDAL[rank - 1] : rank}
+              <div key={entry.id}
+                className="rounded-2xl p-3 flex items-center gap-3 animate-slide-up transition-all"
+                style={{
+                  animationDelay: `${i * 0.03}s`,
+                  background: rankStyle ? rankStyle.bg : isMe ? "rgba(255,80,150,0.12)" : "rgba(255,255,255,0.04)",
+                  border: rankStyle ? `1px solid ${rank === 1 ? "rgba(255,200,60,0.4)" : rank === 2 ? "rgba(192,192,192,0.3)" : "rgba(205,127,50,0.3)"}` : isMe ? "1px solid rgba(255,80,150,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                  boxShadow: rankStyle?.glow,
+                }}>
+                {/* Rank */}
+                <div className="w-8 text-center shrink-0">
+                  {rankStyle ? (
+                    <span className="text-xl">{rankStyle.emoji}</span>
+                  ) : (
+                    <span className="text-white/40 font-fredoka text-sm">#{rank}</span>
+                  )}
                 </div>
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center font-fredoka text-white text-sm border border-white/30"
-                  style={{ backgroundColor: AVATAR_COLORS[entry.avatar] ?? "#FF6B9D" }}
-                >
-                  {entry.avatar.replace("avatar", "")}
-                </div>
+
+                {/* Avatar */}
+                <span className="text-2xl">{avatarEmoji}</span>
+
+                {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className={`font-semibold text-sm truncate ${isMe ? "text-primary" : "text-foreground"}`}>
-                    {entry.username} {isMe ? "(You)" : ""}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Level {entry.level}</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-fredoka text-white text-sm truncate">{entry.username}</span>
+                    {isMe && <span className="chip text-[9px]" style={{ background: "rgba(255,80,150,0.3)", color: "#ff4d94" }}>You</span>}
+                  </div>
+                  <div className="text-white/35 text-[11px] truncate">{entry.salonName ?? "My Salon"} · Lv.{entry.level}</div>
                 </div>
-                <div className="font-fredoka text-base text-foreground">{entry.score.toLocaleString()}</div>
+
+                {/* Score */}
+                <div className="shrink-0 text-right">
+                  <div className="font-fredoka text-sm" style={{ color: rank === 1 ? "#FFD700" : rank <= 3 ? "#C0C0C0" : "rgba(255,255,255,0.7)" }}>
+                    {entry.score.toLocaleString()}
+                  </div>
+                  <div className="text-white/30 text-[10px]">pts</div>
+                </div>
               </div>
             );
           })}
         </div>
 
-        {/* My rank if not in top 20 */}
-        {user && myRank > 20 && (
-          <div className="mt-3 p-3 rounded-2xl bg-primary/10 border border-primary/30 flex items-center gap-3">
-            <span className="w-7 text-center font-fredoka text-muted-foreground">{myRank}</span>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center font-fredoka text-white text-sm"
-              style={{ backgroundColor: AVATAR_COLORS[user.avatar] }}
-            >
-              {user.avatar.replace("avatar", "")}
-            </div>
-            <div className="flex-1">
-              <p className="font-semibold text-sm text-primary">{user.username} (You)</p>
-              <p className="text-xs text-muted-foreground">Level {user.level}</p>
-            </div>
-            <div className="font-fredoka text-base">{user.totalCoinsEarned.toLocaleString()}</div>
+        {leaderboard.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-5xl mb-4">🏆</div>
+            <div className="font-fredoka text-white text-xl mb-2">No Rankings Yet</div>
+            <div className="text-white/40 text-sm">Complete levels to appear on the leaderboard!</div>
           </div>
         )}
       </div>
+
       <NavBar />
     </div>
   );

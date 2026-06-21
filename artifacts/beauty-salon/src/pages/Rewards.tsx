@@ -1,203 +1,254 @@
 import { useState } from "react";
 import { useGame } from "@/context/GameContext";
-import CoinBar from "@/components/CoinBar";
 import NavBar from "@/components/NavBar";
-import { ChevronLeft, Coins, Gem, Check, RefreshCw } from "lucide-react";
-import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import CoinBar from "@/components/CoinBar";
+import { getCurrentEvent } from "@/data/weeklyEvents";
 
-const SPIN_COLORS = [
-  "hsl(330 80% 60%)",
-  "hsl(270 55% 65%)",
-  "hsl(43 92% 58%)",
-  "hsl(195 80% 55%)",
-  "hsl(150 65% 50%)",
-  "hsl(0 70% 60%)",
-  "hsl(25 90% 58%)",
-  "hsl(300 60% 62%)",
-];
+const SPIN_COLORS = ["#FF4D94","#FFD700","#C084FC","#FF6B35","#34D399","#60A5FA","#FF4D94","#FFD700"];
 
-export default function Rewards() {
-  const { user, rewards, adminSettings, claimDailyReward, executeSpin, unlockAchievement } = useGame();
-  const { toast } = useToast();
+function SpinWheel({ onSpin, canSpin }: { onSpin: () => { label: string; coins: number; gems: number; type: string }; canSpin: boolean }) {
   const [spinning, setSpinning] = useState(false);
-  const [spinAngle, setSpinAngle] = useState(0);
-  const [spinResult, setSpinResult] = useState<{ label: string; coins: number; gems: number; type: string } | null>(null);
+  const [angle, setAngle] = useState(0);
+  const [result, setResult] = useState<{ label: string; coins: number; gems: number } | null>(null);
 
-  if (!user) return null;
+  const prizes = ["100 Coins","1 Gem","250 Coins","3 Gems","500 Coins","Try Again","1000 Coins","5 Gems"];
 
-  const today = new Date().toDateString();
-  const canClaimDaily = rewards.lastDailyClaim !== today;
-  const canSpin = rewards.lastSpin !== today;
-  const streak = rewards.streak;
-  const prizes = adminSettings.spinPrizes;
-
-  const handleDailyClaim = () => {
-    const result = claimDailyReward();
-    if (result.success) {
-      toast({ title: `Daily reward claimed!`, description: `+${result.coins} coins` });
-    } else {
-      toast({ title: result.message ?? "Already claimed", variant: "destructive" });
-    }
-  };
-
-  const handleSpin = () => {
-    if (!canSpin || spinning) return;
-    unlockAchievement("first_spin");
+  function handleSpin() {
+    if (spinning || !canSpin) return;
     setSpinning(true);
-    setSpinResult(null);
-    const winIdx = Math.floor(Math.random() * prizes.length);
-    const baseAngle = spinAngle + 1440 + (360 / prizes.length) * (prizes.length - winIdx);
-    setSpinAngle(baseAngle);
+    setResult(null);
+    const spins = 5 + Math.floor(Math.random() * 5);
+    const extraAngle = Math.floor(Math.random() * 360);
+    const totalAngle = angle + spins * 360 + extraAngle;
+    setAngle(totalAngle);
 
     setTimeout(() => {
-      const result = executeSpin();
-      setSpinResult(result);
+      const prize = onSpin();
+      setResult(prize);
       setSpinning(false);
-      if (result.coins) toast({ title: `+${result.coins} coins!` });
-      if (result.gems) toast({ title: `+${result.gems} gems!` });
-    }, 3200);
-  };
+    }, 3500);
+  }
 
-  const segmentAngle = 360 / prizes.length;
+  const sliceAngle = 360 / prizes.length;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <CoinBar />
-      <div className="pt-14 px-4 max-w-md mx-auto">
-        <div className="flex items-center gap-3 py-3">
-          <Link href="/hub">
-            <button className="p-2 rounded-xl bg-card border border-border">
-              <ChevronLeft size={20} />
-            </button>
-          </Link>
-          <h1 className="font-fredoka text-2xl">Rewards</h1>
-        </div>
+    <div className="flex flex-col items-center">
+      {/* Pointer */}
+      <div className="text-3xl mb-1" style={{ filter: "drop-shadow(0 0 8px rgba(255,200,60,0.8))" }}>▼</div>
 
-        {/* Daily reward */}
-        <div className="bg-card border border-border rounded-3xl p-5 shadow-sm">
-          <h2 className="font-fredoka text-xl mb-3">Daily Login Reward</h2>
-          <div className="grid grid-cols-7 gap-1 mb-4">
-            {adminSettings.dailyRewardCoins.map((coins, i) => {
-              const dayNum = i + 1;
-              const claimed = streak >= dayNum;
-              const today_ = (streak % 7) === i && canClaimDaily;
-              return (
-                <div
-                  key={i}
-                  data-testid={`daily-day-${dayNum}`}
-                  className={`flex flex-col items-center p-1.5 rounded-xl border ${
-                    claimed ? "bg-primary/20 border-primary/40" :
-                    today_ ? "border-primary animate-pulse-glow" :
-                    "bg-muted border-transparent"
-                  }`}
-                >
-                  {claimed ? (
-                    <Check size={14} className="text-primary" />
-                  ) : (
-                    <Coins size={14} className="text-muted-foreground" />
-                  )}
-                  <span className="text-[9px] font-bold mt-0.5 text-muted-foreground">Day {dayNum}</span>
-                  <span className="text-[9px] font-semibold text-foreground">{coins}</span>
-                </div>
-              );
-            })}
-          </div>
-          <Button
-            data-testid="btn-claim-daily"
-            onClick={handleDailyClaim}
-            disabled={!canClaimDaily}
-            className="w-full font-fredoka text-base"
-          >
-            {canClaimDaily ? (
-              <><Coins size={16} className="mr-2" />Claim Day {(streak % 7) + 1} Reward</>
-            ) : (
-              "Come back tomorrow!"
-            )}
-          </Button>
-        </div>
-
-        {/* Spin wheel */}
-        <div className="bg-card border border-border rounded-3xl p-5 mt-4 shadow-sm flex flex-col items-center">
-          <h2 className="font-fredoka text-xl mb-4">Lucky Spin</h2>
-
-          {/* Wheel */}
-          <div className="relative w-56 h-56 mb-4">
-            {/* Pointer */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
-              <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-b-[20px] border-l-transparent border-r-transparent border-b-foreground" />
-            </div>
-
-            {/* SVG Wheel */}
-            <svg
-              width="224" height="224" viewBox="0 0 224 224"
-              data-testid="spin-wheel"
+      {/* Wheel */}
+      <div className="relative w-64 h-64 mb-4">
+        <div
+          className="w-full h-full rounded-full relative overflow-hidden"
+          style={{
+            transition: spinning ? "transform 3.5s cubic-bezier(0.17, 0.67, 0.21, 0.99)" : "none",
+            transform: `rotate(${angle}deg)`,
+            boxShadow: "0 0 30px rgba(255,80,150,0.4), 0 0 60px rgba(180,80,255,0.2)",
+          }}>
+          {prizes.map((prize, i) => (
+            <div
+              key={i}
+              className="absolute w-full h-full"
               style={{
-                transform: `rotate(${spinAngle}deg)`,
-                transition: spinning ? "transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)" : "none",
-              }}
-            >
-              {prizes.map((prize, i) => {
-                const startAngle = (segmentAngle * i - 90) * (Math.PI / 180);
-                const endAngle = (segmentAngle * (i + 1) - 90) * (Math.PI / 180);
-                const cx = 112, cy = 112, r = 110;
-                const x1 = cx + r * Math.cos(startAngle);
-                const y1 = cy + r * Math.sin(startAngle);
-                const x2 = cx + r * Math.cos(endAngle);
-                const y2 = cy + r * Math.sin(endAngle);
-                const large = segmentAngle > 180 ? 1 : 0;
-                const midAngle = (startAngle + endAngle) / 2;
-                const tx = cx + (r * 0.65) * Math.cos(midAngle);
-                const ty = cy + (r * 0.65) * Math.sin(midAngle);
-                return (
-                  <g key={i}>
-                    <path
-                      d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`}
-                      fill={SPIN_COLORS[i % SPIN_COLORS.length]}
-                      stroke="white"
-                      strokeWidth="2"
-                    />
-                    <text
-                      x={tx} y={ty}
-                      fill="white"
-                      fontSize="9"
-                      fontWeight="bold"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      transform={`rotate(${segmentAngle * i + segmentAngle / 2 - 90}, ${tx}, ${ty})`}
-                    >
-                      {prize.label}
-                    </text>
-                  </g>
-                );
-              })}
-              <circle cx="112" cy="112" r="12" fill="white" stroke="#ccc" strokeWidth="2" />
-            </svg>
-          </div>
-
-          {spinResult && (
-            <div className="mb-3 text-center bg-primary/10 rounded-2xl px-6 py-3 border border-primary/30">
-              <p className="font-fredoka text-lg text-primary">
-                {spinResult.type === "try_again" ? "Better luck next time!" :
-                 spinResult.type === "xp_boost" ? "2x XP Boost activated!" :
-                 spinResult.coins ? `+${spinResult.coins} Coins!` :
-                 `+${spinResult.gems} Gem${spinResult.gems > 1 ? "s" : ""}!`}
-              </p>
+                transform: `rotate(${i * sliceAngle}deg)`,
+                transformOrigin: "50% 50%",
+              }}>
+              <div
+                className="absolute right-0 top-1/2 -translate-y-1/2 font-bold text-white text-xs text-center"
+                style={{
+                  width: "50%",
+                  paddingLeft: "6px",
+                  paddingRight: "2px",
+                  background: SPIN_COLORS[i % SPIN_COLORS.length],
+                  height: `${100 / prizes.length}%`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  clipPath: `polygon(0 50%, 100% ${(i % 2 === 0 ? -30 : 130)}%, 100% ${(i % 2 === 0 ? 130 : -30)}%)`,
+                  fontSize: "9px",
+                  lineHeight: 1.2,
+                }}
+              >
+                {prize}
+              </div>
             </div>
-          )}
-
-          <Button
-            data-testid="btn-spin"
-            onClick={handleSpin}
-            disabled={!canSpin || spinning}
-            className="font-fredoka text-lg px-8"
-          >
-            <RefreshCw size={16} className={`mr-2 ${spinning ? "animate-spin" : ""}`} />
-            {spinning ? "Spinning..." : canSpin ? "Spin Now (Free!)" : "Come back tomorrow!"}
-          </Button>
+          ))}
+          {/* Center circle */}
+          <div className="absolute inset-0 m-auto w-16 h-16 rounded-full flex items-center justify-center text-2xl z-10"
+            style={{ background: "linear-gradient(135deg,hsl(285 40% 15%),hsl(330 40% 18%))", border: "3px solid rgba(255,255,255,0.2)" }}>
+            💎
+          </div>
         </div>
       </div>
+
+      {result && (
+        <div className="mb-4 rounded-2xl px-6 py-3 text-center animate-reward-pop glass-card-gold">
+          <div className="font-fredoka text-yellow-300 text-2xl">{result.label}</div>
+          {result.coins > 0 && <div className="text-white/70 text-sm">+{result.coins} coins added!</div>}
+          {result.gems > 0 && <div className="text-purple-300 text-sm">+{result.gems} gems added!</div>}
+        </div>
+      )}
+
+      <button
+        onClick={handleSpin}
+        disabled={spinning || !canSpin}
+        className="px-8 py-4 rounded-2xl font-fredoka text-xl text-white tap-scale transition-all"
+        style={{
+          background: canSpin && !spinning ? "linear-gradient(135deg,#ff4d94,#c084fc)" : "rgba(255,255,255,0.1)",
+          opacity: (!canSpin || spinning) ? 0.6 : 1,
+          boxShadow: canSpin && !spinning ? "0 0 20px rgba(255,80,150,0.5)" : undefined,
+        }}>
+        {spinning ? "Spinning..." : canSpin ? "🎰 SPIN!" : "✅ Spun Today"}
+      </button>
+    </div>
+  );
+}
+
+export default function Rewards() {
+  const { rewards, claimDailyReward, executeSpin } = useGame();
+  const [claimResult, setClaimResult] = useState<{ coins: number } | null>(null);
+  const [tab, setTab] = useState<"daily" | "spin" | "event">("daily");
+
+  const event = getCurrentEvent();
+  const today = new Date().toDateString();
+  const canClaim = rewards.lastDailyClaim !== today;
+  const canSpin = rewards.lastSpin !== today;
+
+  const dailyAmounts = [100, 150, 200, 300, 400, 500, 1000];
+
+  function handleClaim() {
+    const r = claimDailyReward();
+    if (r.success && r.coins) setClaimResult({ coins: r.coins });
+  }
+
+  return (
+    <div className="min-h-screen pb-24" style={{ background: "linear-gradient(160deg,hsl(285 40% 8%),hsl(330 35% 11%),hsl(310 30% 9%))" }}>
+      <CoinBar title="Rewards" showBack />
+
+      <div className="px-4 max-w-lg mx-auto mt-4">
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-5">
+          {(["daily","spin","event"] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className="flex-1 py-2.5 rounded-xl font-fredoka text-sm capitalize tap-scale transition-all"
+              style={{
+                background: tab === t ? "linear-gradient(135deg,rgba(255,80,150,0.3),rgba(180,80,255,0.2))" : "rgba(255,255,255,0.05)",
+                border: tab === t ? "1px solid rgba(255,80,150,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                color: tab === t ? "white" : "rgba(255,255,255,0.5)",
+              }}>
+              {t === "daily" ? "🎁 Daily" : t === "spin" ? "🎰 Spin" : "🎉 Event"}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Daily Rewards ── */}
+        {tab === "daily" && (
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <div className="font-fredoka text-white text-2xl mb-1">Daily Check-in</div>
+              <div className="text-white/50 text-sm">
+                Current streak: <span className="text-orange-400 font-bold">{rewards.streak} days 🔥</span>
+              </div>
+            </div>
+
+            {/* Day rewards grid */}
+            <div className="grid grid-cols-7 gap-1.5">
+              {dailyAmounts.map((amount, i) => {
+                const dayNum = i + 1;
+                const currentDay = (rewards.streak % 7) + 1;
+                const isCurrent = dayNum === currentDay;
+                const isPast = dayNum < currentDay;
+                const isClaimed = !canClaim && isCurrent;
+                return (
+                  <div key={i}
+                    className="flex flex-col items-center py-2 px-1 rounded-xl text-center transition-all"
+                    style={{
+                      background: isClaimed || isPast ? "rgba(255,200,60,0.2)" : isCurrent ? "rgba(255,80,150,0.2)" : "rgba(255,255,255,0.05)",
+                      border: isCurrent ? "1px solid rgba(255,80,150,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                      transform: isCurrent ? "scale(1.05)" : undefined,
+                    }}>
+                    <div className="text-[9px] text-white/40 font-bold mb-1">Day {dayNum}</div>
+                    <div className="text-lg">{isClaimed || isPast ? "✅" : "🎁"}</div>
+                    <div className="text-[9px] text-yellow-300 font-bold mt-1">{amount >= 1000 ? `${amount/1000}K` : amount}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Claim button */}
+            {claimResult ? (
+              <div className="text-center py-6 animate-reward-pop">
+                <div className="text-5xl mb-3">🎁</div>
+                <div className="font-fredoka text-yellow-300 text-3xl">+{claimResult.coins} Coins!</div>
+                <div className="text-white/50 text-sm mt-2">Come back tomorrow for Day {((rewards.streak) % 7) + 1}!</div>
+              </div>
+            ) : canClaim ? (
+              <button onClick={handleClaim}
+                className="w-full py-5 rounded-2xl font-fredoka text-2xl text-white animate-pulse-glow tap-scale"
+                style={{ background: "linear-gradient(135deg,#FFD700,#FF9A3C)", color: "#1a0a00" }}>
+                🎁 Claim Day {(rewards.streak % 7) + 1} Reward!
+              </button>
+            ) : (
+              <div className="w-full py-4 rounded-2xl text-center text-white/40 font-semibold glass-card">
+                ✅ Claimed! Come back tomorrow
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Spin Wheel ── */}
+        {tab === "spin" && (
+          <div className="space-y-4">
+            <div className="text-center mb-2">
+              <div className="font-fredoka text-white text-2xl mb-1">Lucky Spin</div>
+              <div className="text-white/50 text-sm">One free spin per day!</div>
+            </div>
+            <SpinWheel onSpin={executeSpin} canSpin={canSpin} />
+          </div>
+        )}
+
+        {/* ── Weekly Event ── */}
+        {tab === "event" && (
+          <div className="space-y-4">
+            <div className="rounded-2xl p-5 text-center animate-slide-up"
+              style={{ background: `linear-gradient(135deg,${event.color}30,${event.color}12)`, border: `1px solid ${event.color}50` }}>
+              <div className="text-5xl mb-3 animate-float">{event.emoji}</div>
+              <div className="font-fredoka text-white text-2xl mb-1">{event.name}</div>
+              <div className="text-white/60 text-sm mb-4">{event.description}</div>
+              <div className="inline-block px-4 py-2 rounded-xl font-bold text-xl"
+                style={{ background: `${event.color}40`, color: event.color, border: `1px solid ${event.color}` }}>
+                {event.bonusMultiplier}x {event.bonusType === "all" ? "ALL Rewards" : event.bonusType.toUpperCase()}
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-4 glass-card">
+              <div className="font-fredoka text-white text-lg mb-3">How to earn bonuses:</div>
+              <div className="space-y-2 text-sm text-white/60">
+                <div className="flex items-start gap-2">
+                  <span>✨</span>
+                  <span>Play {event.challengeType === "all" ? "any level" : `${event.challengeType} challenge levels`} this week</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span>💰</span>
+                  <span>All {event.bonusType === "all" ? "coins, gems & XP" : event.bonusType} automatically multiplied by {event.bonusMultiplier}x</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span>🏆</span>
+                  <span>Bonus applies until the weekly event resets</span>
+                </div>
+              </div>
+            </div>
+
+            <button onClick={() => window.location.href = "#/levels"}
+              className="w-full py-4 rounded-2xl font-fredoka text-xl text-white tap-scale animate-pulse-glow"
+              style={{ background: `linear-gradient(135deg,${event.color},${event.color}99)` }}>
+              Play {event.emoji} Event Levels!
+            </button>
+          </div>
+        )}
+      </div>
+
       <NavBar />
     </div>
   );

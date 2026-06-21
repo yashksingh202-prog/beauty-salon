@@ -1,54 +1,52 @@
 import { useGame } from "@/context/GameContext";
-import { Coins, Gem, Zap, Volume2, VolumeX } from "lucide-react";
-import { useState } from "react";
-import { Progress } from "@/components/ui/progress";
+import { Link } from "wouter";
 
-export default function CoinBar() {
+export default function CoinBar({ title, showBack }: { title?: string; showBack?: boolean }) {
   const { user } = useGame();
-  const [soundOn, setSoundOn] = useState(true);
-
-  if (!user) return null;
-
-  const xpPerLevel = user.level * 100;
-  const xpPct = Math.min(100, (user.xp / xpPerLevel) * 100);
 
   return (
     <div
-      data-testid="coin-bar"
-      className="fixed top-0 left-0 right-0 z-50 px-3 pt-safe"
-      style={{ background: "linear-gradient(to bottom, hsl(330 80% 60%), hsl(340 70% 55%))" }}
+      className="sticky top-0 z-40 px-4 py-3"
+      style={{ background: "rgba(20,8,35,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
     >
-      <div className="flex items-center justify-between py-2 max-w-md mx-auto">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between max-w-lg mx-auto gap-2">
+        {/* Left: back or title */}
+        <div className="flex items-center gap-2 min-w-0">
+          {showBack ? (
+            <Link href="/hub">
+              <button className="text-white/60 text-sm flex items-center gap-1 tap-scale">
+                <span className="text-lg">←</span>
+              </button>
+            </Link>
+          ) : null}
+          {title && (
+            <h2 className="font-fredoka text-white text-lg leading-none truncate">{title}</h2>
+          )}
+        </div>
+
+        {/* Right: currency display */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* Coins */}
-          <div data-testid="coin-display" className="flex items-center gap-1 bg-white/20 rounded-full px-2 py-0.5">
-            <Coins size={14} className="text-yellow-200" />
-            <span className="text-white font-bold text-xs font-fredoka">{user.coins.toLocaleString()}</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: "rgba(255,200,60,0.15)", border: "1px solid rgba(255,200,60,0.25)" }}>
+            <span className="text-sm">🪙</span>
+            <span className="text-yellow-300 font-bold text-sm leading-none">
+              {(user?.coins ?? 0).toLocaleString()}
+            </span>
           </div>
           {/* Gems */}
-          <div data-testid="gem-display" className="flex items-center gap-1 bg-white/20 rounded-full px-2 py-0.5">
-            <Gem size={14} className="text-cyan-200" />
-            <span className="text-white font-bold text-xs font-fredoka">{user.gems}</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: "rgba(180,80,255,0.15)", border: "1px solid rgba(180,80,255,0.25)" }}>
+            <span className="text-sm">💎</span>
+            <span className="text-purple-300 font-bold text-sm leading-none">
+              {user?.gems ?? 0}
+            </span>
           </div>
+          {/* Level badge */}
+          <Link href="/profile">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl tap-scale" style={{ background: "rgba(255,80,150,0.15)", border: "1px solid rgba(255,80,150,0.25)" }}>
+              <span className="text-pink-300 font-bold text-sm leading-none">Lv.{user?.level ?? 1}</span>
+            </div>
+          </Link>
         </div>
-
-        {/* Level + XP */}
-        <div className="flex flex-col items-center min-w-[80px]">
-          <div className="flex items-center gap-1">
-            <Zap size={12} className="text-yellow-200" />
-            <span className="text-white font-fredoka text-xs">Lv.{user.level}</span>
-          </div>
-          <Progress value={xpPct} className="h-1 w-16 bg-white/30 [&>div]:bg-yellow-300" />
-        </div>
-
-        {/* Sound toggle */}
-        <button
-          data-testid="sound-toggle"
-          onClick={() => setSoundOn(p => !p)}
-          className="bg-white/20 rounded-full p-1.5 text-white"
-        >
-          {soundOn ? <Volume2 size={14} /> : <VolumeX size={14} />}
-        </button>
       </div>
     </div>
   );

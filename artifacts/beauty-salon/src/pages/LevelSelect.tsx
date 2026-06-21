@@ -1,120 +1,166 @@
-import { Link } from "wouter";
-import { useGame } from "@/context/GameContext";
-import CoinBar from "@/components/CoinBar";
-import NavBar from "@/components/NavBar";
-import { LEVELS } from "@/data/levels";
-import { Star, Lock, ChevronLeft } from "lucide-react";
 import { useState } from "react";
+import { useGame } from "@/context/GameContext";
+import { useLocation } from "wouter";
+import NavBar from "@/components/NavBar";
+import CoinBar from "@/components/CoinBar";
+import { generateLevel } from "@/data/levels";
+import { ChallengeType } from "@/data/customers";
 
-type Filter = "all" | "easy" | "medium" | "hard" | "expert";
+const TABS: { id: ChallengeType | "all"; label: string; emoji: string }[] = [
+  { id: "all",       label: "All",       emoji: "🎮" },
+  { id: "classic",   label: "Classic",   emoji: "💄" },
+  { id: "bridal",    label: "Bridal",    emoji: "💍" },
+  { id: "fashion",   label: "Fashion",   emoji: "👗" },
+  { id: "celebrity", label: "Celebrity", emoji: "⭐" },
+];
+
+const DIFFICULTY_COLOR: Record<string, string> = {
+  Starter:   "rgba(150,200,80,0.3)",
+  Easy:      "rgba(80,200,150,0.3)",
+  Medium:    "rgba(255,180,60,0.3)",
+  Hard:      "rgba(255,100,50,0.3)",
+  Expert:    "rgba(180,60,255,0.3)",
+  Legendary: "rgba(255,200,0,0.4)",
+};
+
+const DIFFICULTY_TEXT: Record<string, string> = {
+  Starter: "#96C850", Easy: "#50C896", Medium: "#FFB43C", Hard: "#FF6432", Expert: "#B43CFF", Legendary: "#FFD700",
+};
 
 export default function LevelSelect() {
   const { progress, user } = useGame();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState<ChallengeType | "all">("all");
+  const [page, setPage] = useState(0);
 
-  const completedLevels = user?.completedLevels ?? {};
-  const shown = filter === "all" ? LEVELS : LEVELS.filter(l => l.difficulty === filter);
+  const currentLevel = progress.currentLevel;
+  const LEVELS_PER_PAGE = 20;
+
+  // Generate levels for current page
+  const start = page * LEVELS_PER_PAGE + 1;
+  const end = start + LEVELS_PER_PAGE;
+  let levels = Array.from({ length: end - start }, (_, i) => generateLevel(start + i));
+
+  // Filter by challenge type
+  if (activeTab !== "all") {
+    levels = levels.filter(l => l.challengeType === activeTab);
+  }
+
+  const maxUnlocked = currentLevel;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <CoinBar />
-      {/* Header */}
-      <div className="pt-14 px-4 max-w-md mx-auto">
-        <div className="flex items-center gap-3 py-3">
-          <Link href="/hub">
-            <button className="p-2 rounded-xl bg-card border border-border">
-              <ChevronLeft size={20} />
-            </button>
-          </Link>
-          <h1 className="font-fredoka text-2xl text-foreground">Select Level</h1>
-          <span className="ml-auto text-sm text-muted-foreground">
-            {Object.keys(completedLevels).length}/100
-          </span>
+    <div className="min-h-screen pb-24" style={{ background: "linear-gradient(160deg,hsl(285 40% 8%),hsl(330 35% 11%),hsl(310 30% 9%))" }}>
+      <CoinBar title="Select Level" showBack />
+
+      <div className="px-4 max-w-lg mx-auto">
+
+        {/* ── Progress header ── */}
+        <div className="mt-4 mb-4 rounded-2xl p-4 glass-card-pink animate-slide-up">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-fredoka text-white text-lg">Level {currentLevel}</div>
+              <div className="text-white/40 text-xs">{Object.keys(user?.completedLevels ?? {}).length} levels mastered</div>
+            </div>
+            <div className="text-4xl animate-float">👑</div>
+          </div>
+          <div className="mt-3">
+            <div className="flex justify-between text-[11px] text-white/40 font-bold mb-1">
+              <span>Progress</span>
+              <span>{currentLevel}/10,000</span>
+            </div>
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+              <div className="h-full rounded-full progress-glow transition-all duration-700"
+                style={{ width: `${Math.min((currentLevel / 100) * 100, 100)}%`, background: "linear-gradient(90deg,#ff4d94,#c084fc)" }} />
+            </div>
+          </div>
         </div>
 
-        {/* Difficulty filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {(["all","easy","medium","hard","expert"] as Filter[]).map(f => (
-            <button
-              key={f}
-              data-testid={`filter-${f}`}
-              onClick={() => setFilter(f)}
-              className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold capitalize transition-all ${
-                filter === f
-                  ? "bg-primary text-white shadow"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {f}
+        {/* ── Page navigation ── */}
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
+            className="px-3 py-1.5 rounded-xl text-white/60 font-bold text-sm glass-card tap-scale disabled:opacity-30">
+            ← Prev
+          </button>
+          <div className="text-white/60 text-xs font-bold">
+            Levels {start}–{end - 1}
+          </div>
+          <button onClick={() => setPage(page + 1)}
+            className="px-3 py-1.5 rounded-xl text-white/60 font-bold text-sm glass-card tap-scale">
+            Next →
+          </button>
+        </div>
+
+        {/* ── Type tabs ── */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 tap-scale transition-all"
+              style={{
+                background: activeTab === tab.id ? "linear-gradient(135deg,rgba(255,80,150,0.3),rgba(180,80,255,0.2))" : "rgba(255,255,255,0.06)",
+                border: activeTab === tab.id ? "1px solid rgba(255,80,150,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                color: activeTab === tab.id ? "white" : "rgba(255,255,255,0.5)",
+              }}>
+              {tab.emoji} {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-5 gap-2 mt-3">
-          {shown.map(level => {
-            const unlocked = progress.unlockedLevels.includes(level.id);
-            const completedData = completedLevels[level.id];
-            const completed = !!completedData;
-            const stars = completedData?.stars ?? 0;
+        {/* ── Level grid ── */}
+        <div className="grid grid-cols-1 gap-2">
+          {levels.map((lvl) => {
+            const completed = user?.completedLevels?.[String(lvl.id)];
+            const unlocked = lvl.id <= maxUnlocked;
+            const stars = completed?.stars ?? 0;
 
             return (
-              <Link key={level.id} href={unlocked ? `/play/${level.id}` : "#"}>
-                <div
-                  data-testid={`level-${level.id}`}
-                  className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all active:scale-90 cursor-pointer ${
-                    completed
-                      ? "bg-primary text-white shadow-md"
-                      : unlocked
-                      ? "bg-card border-2 border-primary/40 text-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {!unlocked ? (
-                    <Lock size={14} />
-                  ) : (
-                    <>
-                      <span className="font-fredoka text-sm leading-none">{level.id}</span>
-                      {completed && (
-                        <div className="flex gap-0.5 mt-0.5">
-                          {[1,2,3].map(s => (
-                            <Star
-                              key={s}
-                              size={6}
-                              className={stars >= s ? "text-yellow-300 fill-yellow-300" : "text-white/40"}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {/* Difficulty dot */}
-                  <div className={`absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full ${
-                    level.difficulty === "easy" ? "bg-emerald-400" :
-                    level.difficulty === "medium" ? "bg-amber-400" :
-                    level.difficulty === "hard" ? "bg-orange-400" : "bg-rose-400"
-                  }`} />
+              <button
+                key={lvl.id}
+                onClick={() => unlocked && setLocation(`/play/${lvl.id}`)}
+                className={`w-full rounded-2xl p-3.5 text-left tap-scale flex items-center gap-3 transition-all ${!unlocked ? "opacity-40" : ""}`}
+                style={{
+                  background: completed
+                    ? "linear-gradient(135deg,rgba(255,200,60,0.15),rgba(255,150,0,0.08))"
+                    : unlocked ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.03)",
+                  border: completed ? "1px solid rgba(255,200,60,0.3)" : "1px solid rgba(255,255,255,0.08)",
+                }}>
+
+                {/* Level number circle */}
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-fredoka text-sm"
+                  style={{ background: DIFFICULTY_COLOR[lvl.difficulty] ?? "rgba(255,255,255,0.1)" }}>
+                  {unlocked ? (completed ? "★" : lvl.id) : "🔒"}
                 </div>
-              </Link>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-fredoka text-white text-sm">{lvl.customer.name}</span>
+                    <span className="chip text-[9px]" style={{ background: DIFFICULTY_COLOR[lvl.difficulty], color: DIFFICULTY_TEXT[lvl.difficulty] }}>
+                      {lvl.difficulty}
+                    </span>
+                    {lvl.customer.isVIP && <span className="chip text-[9px]" style={{ background: "rgba(255,200,60,0.3)", color: "#FFD700" }}>👑 VIP</span>}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[11px]">{lvl.worldEmoji} {lvl.worldName}</span>
+                    <span className="text-white/30 text-[10px]">Lv.{lvl.id}</span>
+                  </div>
+                </div>
+
+                {/* Right side */}
+                <div className="shrink-0 text-right">
+                  {/* Stars */}
+                  <div className="flex gap-0.5 justify-end mb-1">
+                    {[1,2,3].map(n => (
+                      <span key={n} className={`text-sm ${n <= stars ? "star-gold" : "star-empty"}`}>★</span>
+                    ))}
+                  </div>
+                  <div className="text-yellow-300 text-[11px] font-bold">🪙 {lvl.coinReward.toLocaleString()}</div>
+                </div>
+              </button>
             );
           })}
         </div>
-
-        {/* Legend */}
-        <div className="mt-4 flex flex-wrap gap-3 text-xs">
-          {[
-            { label: "Easy",   cls: "bg-emerald-400" },
-            { label: "Medium", cls: "bg-amber-400" },
-            { label: "Hard",   cls: "bg-orange-400" },
-            { label: "Expert", cls: "bg-rose-400" },
-          ].map(l => (
-            <div key={l.label} className="flex items-center gap-1 text-muted-foreground">
-              <div className={`w-2 h-2 rounded-full ${l.cls}`} />
-              {l.label}
-            </div>
-          ))}
-        </div>
       </div>
+
       <NavBar />
     </div>
   );
