@@ -154,17 +154,19 @@ export function useGameStore() {
     if (storedId) {
       const user = parsedUsers.find(u => u.id === storedId);
       if (user) {
-        // Migrate old users missing new fields
+        // Migrate old users missing new fields (nullish coalescing preserves existing values)
         const migrated: User = {
-          salonName: "My Salon",
-          salonUpgrades: DEFAULT_SALON_UPGRADES,
-          shopPurchases: [],
-          totalPerfectLevels: 0,
-          bridalCompleted: 0,
-          celebrityCompleted: 0,
-          fashionCompleted: 0,
-          vipServed: 0,
           ...user,
+          salonName:          user.salonName          ?? "My Salon",
+          salonUpgrades:      user.salonUpgrades      ?? DEFAULT_SALON_UPGRADES,
+          shopPurchases:      user.shopPurchases       ?? [],
+          totalPerfectLevels: user.totalPerfectLevels  ?? 0,
+          totalCoinsEarned:   user.totalCoinsEarned    ?? 0,
+          totalGemsEarned:    user.totalGemsEarned     ?? 0,
+          bridalCompleted:    user.bridalCompleted     ?? 0,
+          celebrityCompleted: user.celebrityCompleted  ?? 0,
+          fashionCompleted:   user.fashionCompleted    ?? 0,
+          vipServed:          user.vipServed           ?? 0,
         };
         setCurrentUser(migrated);
         const prog = localStorage.getItem(`empire_progress_${user.id}`);

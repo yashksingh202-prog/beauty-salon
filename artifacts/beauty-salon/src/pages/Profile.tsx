@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useGame } from "@/context/GameContext";
+import { useLocation } from "wouter";
 import NavBar from "@/components/NavBar";
 import CoinBar from "@/components/CoinBar";
 import { SALON_UPGRADES } from "@/data/salonUpgrades";
 import { getWorldProgress } from "@/data/levels";
+import { ACHIEVEMENTS } from "@/data/achievements";
 
 const AVATAR_EMOJIS = ["👩‍🦱","👩‍🦰","👩‍🦳","👩","🧕","👩‍🦲","🧑","👱‍♀️"];
 const AVATAR_KEYS   = ["avatar1","avatar2","avatar3","avatar4","avatar5","avatar6","avatar7","avatar8"];
@@ -12,6 +14,7 @@ const DIFFICULTY_NAMES = ["Starter","Easy","Medium","Hard","Expert","Legendary"]
 
 export default function Profile() {
   const { user, progress, upgradeSalon, renameSalon, checkAchievements } = useGame();
+  const [, setLocation] = useLocation();
   const [tab, setTab] = useState<"salon" | "stats" | "customize">("salon");
   const [upgradeMsg, setUpgradeMsg] = useState<{ msg: string; success: boolean } | null>(null);
   const [newName, setNewName] = useState("");
@@ -249,8 +252,8 @@ export default function Profile() {
 
             <div className="rounded-2xl p-4 glass-card">
               <div className="font-fredoka text-white text-base mb-2">🏆 Achievements</div>
-              <div className="text-white/60 text-sm">{(user?.achievements ?? []).length} / {40} unlocked</div>
-              <button onClick={() => window.location.href = "#/achievements"} className="mt-2 text-pink-400 text-sm font-bold">View all →</button>
+              <div className="text-white/60 text-sm">{(user?.achievements ?? []).length} / {ACHIEVEMENTS.length} unlocked</div>
+              <button onClick={() => setLocation("/achievements")} className="mt-2 text-pink-400 text-sm font-bold">View all →</button>
             </div>
           </div>
         )}

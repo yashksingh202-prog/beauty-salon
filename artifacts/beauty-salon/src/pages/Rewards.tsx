@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useGame } from "@/context/GameContext";
+import { useLocation } from "wouter";
 import NavBar from "@/components/NavBar";
 import CoinBar from "@/components/CoinBar";
 import { getCurrentEvent } from "@/data/weeklyEvents";
@@ -106,6 +107,7 @@ function SpinWheel({ onSpin, canSpin }: { onSpin: () => { label: string; coins: 
 
 export default function Rewards() {
   const { rewards, claimDailyReward, executeSpin } = useGame();
+  const [, setLocation] = useLocation();
   const [claimResult, setClaimResult] = useState<{ coins: number } | null>(null);
   const [tab, setTab] = useState<"daily" | "spin" | "event">("daily");
 
@@ -240,7 +242,7 @@ export default function Rewards() {
               </div>
             </div>
 
-            <button onClick={() => window.location.href = "#/levels"}
+            <button onClick={() => setLocation("/levels")}
               className="w-full py-4 rounded-2xl font-fredoka text-xl text-white tap-scale animate-pulse-glow"
               style={{ background: `linear-gradient(135deg,${event.color},${event.color}99)` }}>
               Play {event.emoji} Event Levels!

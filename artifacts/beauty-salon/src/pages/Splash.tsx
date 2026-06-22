@@ -5,7 +5,13 @@ const FLOAT_ICONS = ["💄","💅","👑","💎","✨","🌸","💋","🪞","�
 
 function FloatingIcon({ emoji, style }: { emoji: string; style: React.CSSProperties }) {
   return (
-    <div className="absolute text-2xl pointer-events-none select-none opacity-30 animate-float" style={style}>
+    <div className="absolute text-2xl pointer-events-none select-none opacity-30"
+      style={{
+        animationName: "float",
+        animationTimingFunction: "ease-in-out",
+        animationIterationCount: "infinite",
+        ...style,
+      }}>
       {emoji}
     </div>
   );
@@ -19,7 +25,9 @@ function Particle({ style }: { style: React.CSSProperties }) {
         width: "4px", height: "4px",
         background: "radial-gradient(circle, #FFD700, #FF69B4)",
         boxShadow: "0 0 6px #FFD700",
-        animation: `float-slow ${2 + Math.random() * 3}s ease-in-out infinite`,
+        animationName: "float-slow",
+        animationTimingFunction: "ease-in-out",
+        animationIterationCount: "infinite",
         ...style,
       }}
     />
@@ -85,7 +93,7 @@ export default function Splash() {
 
         {/* Title */}
         <div className="mb-2">
-          <p className="text-white/60 text-sm font-nunito font-700 tracking-[0.3em] uppercase mb-1">Beauty Salon</p>
+          <p className="text-white/60 text-sm font-sans font-bold tracking-[0.3em] uppercase mb-1">Beauty Salon</p>
           <h1 className="font-fredoka text-shimmer leading-none" style={{ fontSize: "clamp(2.5rem, 10vw, 4rem)" }}>
             GLAM EMPIRE
           </h1>

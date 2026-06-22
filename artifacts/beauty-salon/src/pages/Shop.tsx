@@ -49,7 +49,7 @@ const CATEGORIES: { id: ShopCategory; label: string; emoji: string }[] = [
 ];
 
 export default function Shop() {
-  const { user, purchaseShopItem, addCoins, addGems, spendCoins, spendGems, checkAchievements } = useGame();
+  const { user, purchaseShopItem, purchaseShopItemWithGems, addCoins, addGems, spendGems, checkAchievements } = useGame();
   const [activeCategory, setActiveCategory] = useState<ShopCategory>("boosters");
   const [buyResult, setBuyResult] = useState<{ msg: string; success: boolean } | null>(null);
 
@@ -71,19 +71,25 @@ export default function Shop() {
         setTimeout(() => setBuyResult(null), 2000);
         return;
       }
-      spendGems(item.costGems);
-      success = true;
-      // Apply instant effects
-      if (item.id === "coin_pack_sm") addCoins(500);
-      if (item.id === "coin_pack_md") addCoins(2000);
-      if (item.id === "coin_pack_lg") addCoins(10000);
+      if (item.category === "gems") {
+        // Consumable coin pack — spend gems, apply coins, no ownership tracking
+        success = spendGems(item.costGems);
+        if (success) {
+          if (item.id === "coin_pack_sm") addCoins(500);
+          if (item.id === "coin_pack_md") addCoins(2000);
+          if (item.id === "coin_pack_lg") addCoins(10000);
+        }
+      } else {
+        // Tracked booster / cosmetic — record in shopPurchases
+        success = purchaseShopItemWithGems(item.id, item.costGems);
+      }
     }
 
     if (success) {
       setBuyResult({ msg: `${item.emoji} ${item.name} purchased!`, success: true });
       checkAchievements();
     } else {
-      setBuyResult({ msg: "Not enough coins!", success: false });
+      setBuyResult({ msg: item.costCoins ? "Not enough coins!" : "Not enough gems!", success: false });
     }
     setTimeout(() => setBuyResult(null), 2500);
   }

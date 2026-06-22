@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useCallback } from "react";
 import { useGameStore, User, Progress, RewardsState, LeaderboardEntry, AdminSettings } from "@/hooks/useGameStore";
 import { ACHIEVEMENTS, Achievement } from "@/data/achievements";
-import { SalonUpgradesState, getUpgradeBonus, getUpgradeCost, SALON_UPGRADES } from "@/data/salonUpgrades";
+import { SalonUpgradesState, getUpgradeBonus, getUpgradeCost, SALON_UPGRADES, DEFAULT_SALON_UPGRADES } from "@/data/salonUpgrades";
 import { getCurrentEvent } from "@/data/weeklyEvents";
 
 type GameContextType = {
@@ -15,6 +15,7 @@ type GameContextType = {
   allUsers: User[];
 
   login: (username: string, password: string) => { success: boolean; error?: string };
+  register: (username: string, password: string, avatar: string) => { success: boolean; error?: string };
   logout: () => void;
 
   addCoins: (amount: number) => void;
@@ -38,6 +39,7 @@ type GameContextType = {
   getQualityBonus: () => number;
 
   purchaseShopItem: (itemId: string, cost: number) => boolean;
+  purchaseShopItemWithGems: (itemId: string, costGems: number) => boolean;
 
   adminBanUser: (userId: string) => void;
   adminUnbanUser: (userId: string) => void;
@@ -49,6 +51,47 @@ const GameContext = createContext<GameContextType | null>(null);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const store = useGameStore();
+
+  const register = useCallback((username: string, password: string, avatar: string) => {
+    if (username.trim().length < 3) return { success: false, error: "Username must be at least 3 characters" };
+    if (password.length < 4) return { success: false, error: "Password must be at least 4 characters" };
+    const users: User[] = JSON.parse(localStorage.getItem("empire_users") ?? "[]");
+    if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+      return { success: false, error: "Username already taken" };
+    }
+    const newUser: User = {
+      id: `user_${Date.now()}`,
+      username: username.trim(),
+      password,
+      avatar,
+      coins: 500,
+      gems: 5,
+      level: 1,
+      xp: 0,
+      streak: 1,
+      lastLogin: new Date().toISOString(),
+      achievements: [],
+      completedLevels: {},
+      totalCoinsEarned: 500,
+      totalGemsEarned: 5,
+      gamesPlayed: 0,
+      isBanned: false,
+      isAdmin: false,
+      salonName: "My Salon",
+      salonUpgrades: DEFAULT_SALON_UPGRADES,
+      shopPurchases: [],
+      totalPerfectLevels: 0,
+      bridalCompleted: 0,
+      celebrityCompleted: 0,
+      fashionCompleted: 0,
+      vipServed: 0,
+    };
+    const updated = [...users, newUser];
+    localStorage.setItem("empire_users", JSON.stringify(updated));
+    store.setUsers(updated);
+    store.saveUser(newUser);
+    return { success: true };
+  }, [store]);
 
   const login = useCallback((username: string, password: string) => {
     const users: User[] = JSON.parse(localStorage.getItem("empire_users") ?? "[]");
@@ -298,6 +341,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return true;
   }, [store]);
 
+  const purchaseShopItemWithGems = useCallback((itemId: string, costGems: number): boolean => {
+    if (!store.currentUser) return false;
+    if (store.currentUser.gems < costGems) return false;
+    const updated: User = {
+      ...store.currentUser,
+      gems: store.currentUser.gems - costGems,
+      shopPurchases: [...(store.currentUser.shopPurchases ?? []), itemId],
+    };
+    store.saveUser(updated);
+    return true;
+  }, [store]);
+
   const adminBanUser = useCallback((userId: string) => {
     const users: User[] = JSON.parse(localStorage.getItem("empire_users") ?? "[]");
     const updated = users.map(u => u.id === userId ? { ...u, isBanned: true } : u);
@@ -332,13 +387,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     leaderboard: store.leaderboard,
     adminSettings: store.adminSettings,
     allUsers: store.users,
-    login, logout,
+    login, register, logout,
     addCoins, addGems, addXP, spendCoins, spendGems,
     completeLevel, claimDailyReward, executeSpin,
     unlockAchievement, checkAchievements,
     upgradeSalon, renameSalon,
     getCoinMultiplier, getGemMultiplier, getQualityBonus,
-    purchaseShopItem,
+    purchaseShopItem, purchaseShopItemWithGems,
     adminBanUser, adminUnbanUser, adminAdjustCoins, adminUpdateSettings,
   };
 

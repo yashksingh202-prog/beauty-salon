@@ -136,9 +136,9 @@ function scoreService(service: ServiceType, customer: Customer, style: string): 
   if (style === pref) return 88 + Math.floor(Math.random() * 12);
 
   const adjacentMap: Record<string, string[]> = {
-    natural: ["dewy"],  dewy: ["natural","glowy"],  glowy: ["dewy"],  matte: ["natural"],
+    natural: ["dewy","glossy"],  dewy: ["natural","glowy"],  glowy: ["dewy"],  matte: ["natural"],
     smoky: ["dramatic"], dramatic: ["smoky","colorful"], colorful: ["dramatic"],
-    glossy: ["natural","bold"], bold: ["matte"], natural_lip: ["glossy"],
+    glossy: ["natural","bold"], bold: ["matte","glossy"],
     waves: ["curls","straight"], curls: ["waves"], straight: ["waves","bob"], updo: ["curls"], bob: ["straight"],
     french: ["plain"], gradient: ["art"], art: ["gradient"], plain: ["french"],
   };
@@ -189,6 +189,7 @@ export default function Play() {
   const [serviceScores, setServiceScores] = useState<number[]>([]);
   const [showTransition, setShowTransition] = useState(false);
   const [starsRevealed, setStarsRevealed] = useState(0);
+  const [newAchievements, setNewAchievements] = useState<string[]>([]);
 
   const currentService = services[serviceIdx];
   const totalScore = serviceScores.length > 0
@@ -199,15 +200,14 @@ export default function Play() {
   const earnedGems = stars === 3 ? gemReward : stars === 2 ? Math.floor(gemReward / 2) : 0;
 
   useEffect(() => {
-    if (phase === "results") {
-      let i = 0;
-      const t = setInterval(() => {
-        i++;
-        setStarsRevealed(i);
-        if (i >= stars) clearInterval(t);
-      }, 400);
-      return () => clearInterval(t);
-    }
+    if (phase !== "results") return;
+    let i = 0;
+    const t = setInterval(() => {
+      i++;
+      setStarsRevealed(i);
+      if (i >= stars) clearInterval(t);
+    }, 400);
+    return () => clearInterval(t);
   }, [phase, stars]);
 
   function handleStartService() {
@@ -235,7 +235,8 @@ export default function Play() {
         const coins = Math.round(coinReward * (finalScore / 100));
         const gems  = finalStars === 3 ? gemReward : finalStars === 2 ? Math.floor(gemReward / 2) : 0;
         completeLevel(levelId, finalStars, finalScore, level.challengeType, customer.isVIP, coins, gems, xpReward);
-        checkAchievements();
+        const unlocked = checkAchievements();
+        if (unlocked.length > 0) setNewAchievements(unlocked);
       }
     }, 600);
   }
@@ -281,11 +282,11 @@ export default function Play() {
             {/* Emotion badge */}
             <div className="absolute -bottom-2 -right-2 px-2 py-1 rounded-full text-xs font-bold"
               style={{ background: "linear-gradient(135deg,#ff4d94,#c084fc)" }}>
-              {{
+              {({
                 excited: "😍 Excited",  nervous: "😰 Nervous",
                 impatient: "😤 Rushed", happy: "😊 Happy",
                 demanding: "👑 Demanding", sweet: "🌸 Sweet", dramatic: "🎭 Dramatic"
-              }[customer.emotion]}
+              } as Record<string,string>)[customer.emotion] ?? `✨ ${customer.emotion}`}
             </div>
           </div>
 
@@ -449,9 +450,9 @@ export default function Play() {
                 <span className="text-white/60 text-xs font-bold">Preview Score</span>
                 <span className="text-pink-300 text-xs font-bold">
                   {selectedStyle === (
-                    { foundation: customer.preferredFoundation, eyes: customer.preferredEyeStyle,
+                    ({ foundation: customer.preferredFoundation, eyes: customer.preferredEyeStyle,
                       lips: customer.preferredLipStyle, hair: customer.preferredHairStyle,
-                      nails: customer.preferredNailDesign }[currentService]
+                      nails: customer.preferredNailDesign } as Record<string, string | undefined>)[currentService]
                   ) ? "✨ Perfect Match!" : "Good choice"}
                 </span>
               </div>
@@ -459,9 +460,9 @@ export default function Play() {
                 <div className="h-full rounded-full transition-all duration-500 progress-glow"
                   style={{
                     width: selectedStyle === (
-                      { foundation: customer.preferredFoundation, eyes: customer.preferredEyeStyle,
+                      ({ foundation: customer.preferredFoundation, eyes: customer.preferredEyeStyle,
                         lips: customer.preferredLipStyle, hair: customer.preferredHairStyle,
-                        nails: customer.preferredNailDesign }[currentService]
+                        nails: customer.preferredNailDesign } as Record<string, string | undefined>)[currentService]
                     ) ? "90%" : "55%",
                     background: "linear-gradient(90deg,#ff4d94,#c084fc)",
                   }} />
@@ -530,6 +531,17 @@ export default function Play() {
           <p className="text-white text-sm italic">"{reaction}"</p>
           <p className="text-pink-300/60 text-xs mt-2 font-semibold">— {customer.name}</p>
         </div>
+
+        {/* Achievement unlocks */}
+        {newAchievements.length > 0 && (
+          <div className="rounded-2xl p-3 mb-4 animate-bounce-in text-center"
+            style={{ background: "linear-gradient(135deg,rgba(255,200,60,0.25),rgba(255,150,0,0.15))", border: "1px solid rgba(255,200,60,0.4)" }}>
+            <div className="font-fredoka text-yellow-300 text-sm mb-1">🏆 Achievement Unlocked!</div>
+            {newAchievements.map(id => (
+              <div key={id} className="text-white/80 text-xs">✨ {id.replace(/_/g," ")}</div>
+            ))}
+          </div>
+        )}
 
         {/* Rewards */}
         <div className="flex justify-center gap-4 mb-6 animate-slide-up">
