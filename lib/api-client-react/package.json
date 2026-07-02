@@ -11,5 +11,8 @@
   },
   "peerDependencies": {
     "react": ">=18"
+  },
+  "devDependencies": {
+    "@rollup/rollup-linux-arm64-gnu": "^4.62.2"
   }
 }
