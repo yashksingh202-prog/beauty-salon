@@ -453,6 +453,24 @@ importers:
         specifier: 'catalog:'
         version: 3.25.76
 
+  artifacts/beauty-salon-clean:
+    devDependencies:
+      '@rollup/rollup-linux-arm64-gnu':
+        specifier: ^4.62.2
+        version: 4.62.2
+      lightningcss:
+        specifier: ^1.32.0
+        version: 1.32.0
+      lightningcss-android-arm64:
+        specifier: 1.32.0
+        version: 1.32.0
+      prettier:
+        specifier: ^3.8.3
+        version: 3.9.4
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+
   artifacts/mockup-sandbox:
     devDependencies:
       '@hookform/resolvers':
