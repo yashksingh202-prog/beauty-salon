@@ -1,6 +1,7 @@
 {
   "name": "@workspace/beauty-salon",
   "version": "0.0.0",
+  "packageManager": "pnpm@11.9.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -79,7 +80,6 @@
     "vaul": "^1.1.2",
     "vite": "catalog:",
     "wouter": "^3.3.5",
-  "packageManager": "pnpm@11.9.0" 
  "zod": "catalog:"
   },
   "pnpm": {
