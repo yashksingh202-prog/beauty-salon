@@ -44,7 +44,7 @@ catalogs:
       version: 0.45.2
     framer-motion:
       specifier: ^12.23.24
-      version: 12.42.1
+      version: 12.42.2
     lucide-react:
       specifier: ^0.545.0
       version: 0.545.0
@@ -174,10 +174,10 @@ importers:
     dependencies:
       '@clerk/express':
         specifier: ^2.1.26
-        version: 2.1.33(express@5.2.1)
+        version: 2.1.34(express@5.2.1)
       '@clerk/shared':
         specifier: ^4.17.1
-        version: 4.22.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 4.23.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
@@ -382,7 +382,7 @@ importers:
         version: 0.27.3
       framer-motion:
         specifier: 'catalog:'
-        version: 12.42.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 12.42.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -595,7 +595,7 @@ importers:
         version: 3.3.3
       framer-motion:
         specifier: 'catalog:'
-        version: 12.42.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 12.42.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -652,7 +652,7 @@ importers:
     dependencies:
       '@clerk/react':
         specifier: ^6.9.1
-        version: 6.11.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 6.11.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@clerk/themes':
         specifier: ^2.4.57
         version: 2.4.57(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -794,7 +794,7 @@ importers:
         version: 8.6.0(react@19.1.0)
       framer-motion:
         specifier: 'catalog:'
-        version: 12.42.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 12.42.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1012,18 +1012,18 @@ packages:
     resolution: {integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==}
     engines: {node: '>=6.9.0'}
 
-  '@clerk/backend@3.8.5':
-    resolution: {integrity: sha512-BcMp+hXKA4Tx0fWvGh23P2hgg+58SCTmkMJip93DL+lauUNbg1ExpKzzvfSpHFyhdZkQuf4irsDvSdmV+bDpBQ==}
+  '@clerk/backend@3.9.0':
+    resolution: {integrity: sha512-ceFrYQcxKwDCHbSjjHxUSh9jSt1HSQaNC3vS5vwMMVa+Rl4GuxjNOBLW7vopB48I9eD6GjRuBQlX55QzRvd//w==}
     engines: {node: '>=20.9.0'}
 
-  '@clerk/express@2.1.33':
-    resolution: {integrity: sha512-P4TdhmHe7Dk5Df2JS3OB2PvWokEKXOgmuWWi9RIg3nNg/OiAvTgTtnSOl3kHyKX7lHSw1NotFfzjyHnmeVWjWA==}
+  '@clerk/express@2.1.34':
+    resolution: {integrity: sha512-WglPNJ7OpT3/uFdgJFy6wQE75Xr7ycyQKpYScMqkiKRaxEblq9V1kRPv5c0m7dM72XgGEwBAbuN54sO66D5AzQ==}
     engines: {node: '>=20.9.0'}
     peerDependencies:
       express: ^4.17.0 || ^5.0.0
 
-  '@clerk/react@6.11.2':
-    resolution: {integrity: sha512-f1kkxnJCyU/LSZaYQn/u3lpHGZYO3iDr/euVnuNFnnfknlMVIW0NcbPwsIsOf4B3/n+lH6mDEnHhfMh38WtH4g==}
+  '@clerk/react@6.11.3':
+    resolution: {integrity: sha512-MLtclctwVoB4ECMJvl5ZH48rxLPduVsybZS2YnnljHH1rvxRV67cOAmInafgYgt2/LH63SVwRPIrTabbSx6lFQ==}
     engines: {node: '>=20.9.0'}
     peerDependencies:
       react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
@@ -1041,8 +1041,8 @@ packages:
       react-dom:
         optional: true
 
-  '@clerk/shared@4.22.1':
-    resolution: {integrity: sha512-G7AaqgeE2rfnQzCg7V2fuHmprbt5FkMdqFBiNGUkg7yz+yjXfVjytic3TJENXI+FGK+r6vx8eTXVUIqDNQWq4g==}
+  '@clerk/shared@4.23.0':
+    resolution: {integrity: sha512-v4roxB9AwEVq56luLc9MtQ+RkVR66XZJGAfTbQXD0ArdW+fs1P/FhlKwm6OQfvDFNiCCVZA6GoP648t9dGtfrw==}
     engines: {node: '>=20.9.0'}
     peerDependencies:
       react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
@@ -2384,8 +2384,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  electron-to-chromium@1.5.382:
-    resolution: {integrity: sha512-8ETaWbV6SZOrno+G93Ffd9ENsMtetqdnqj4nlfxFW90Sm5GgnuV28Kf62hqQVD6VUgzm7qFQKsTsAPmeUiU3Ug==}
+  electron-to-chromium@1.5.383:
+    resolution: {integrity: sha512-I2484/KkAvl8lm9VyjH2JnbOIV0d/UCqT7gbzs6l+o6Vmn9wgB66uVcKX+Vk6HrXtY6fbWTOEXuv8waDTuFNCw==}
 
   embla-carousel-react@8.6.0:
     resolution: {integrity: sha512-0/PjqU7geVmo6F734pmPqpyHqiM99olvyecY7zdweCw+6tKEXnrE90pBiBbMMU8s5tICemzpQ3hi5EpxzGW+JA==}
@@ -2526,8 +2526,8 @@ packages:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
 
-  framer-motion@12.42.1:
-    resolution: {integrity: sha512-Q2rHK14w8lavWk3MiF1wihcV1sCVsSYrRSaoqJ5eChG7CUNTKxDUgoMesiUSmMBjFpBRPWGrLvzymRrm0jnwFA==}
+  framer-motion@12.42.2:
+    resolution: {integrity: sha512-5XY9luDiu0oHfHBjpDthFMh0ES+122w6p/papSJBweMkO8Sn+PW2QaEgRblQBpWFnuvZS5qvarpt/hO2pjGmnw==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: ^18.0.0 || ^19.0.0
@@ -2810,8 +2810,8 @@ packages:
   modern-screenshot@4.7.0:
     resolution: {integrity: sha512-9YxN+ddPSMMlhylOv25VHzXrl9u67QRxoh7+SEewGtgUw7t6hHTrjptSDJUSne9oG4Xk/h2cwG15nIt4Hc9ujg==}
 
-  motion-dom@12.42.1:
-    resolution: {integrity: sha512-dnBr0vtpJLvTVm+SIi8o7yh8jD57Bv7++nkkoeq85QW+QJqM+RIIoyvu5LyZ186dILUMHzkxv5sQveTxuOcOBw==}
+  motion-dom@12.42.2:
+    resolution: {integrity: sha512-5gIMWLp/PycBtJRJWRgjxke5n8dlvkSn2DrYW+tr3XcqAZY1xZh6BJyooJXCM8wdfM7wfMjkBJNLge1CKPUIRA==}
 
   motion-utils@12.39.0:
     resolution: {integrity: sha512-8nadJAJjTtqRkmRF36FoJTrywK9nnFmnPwnSMyxaOCU7GDjN9RTMJIxx9De8ErM+vpPhMccr/6fo5WciyQLnMQ==}
@@ -3614,28 +3614,28 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@clerk/backend@3.8.5':
+  '@clerk/backend@3.9.0':
     dependencies:
-      '@clerk/shared': 4.22.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@clerk/shared': 4.23.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       standardwebhooks: 1.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
       - react
       - react-dom
 
-  '@clerk/express@2.1.33(express@5.2.1)':
+  '@clerk/express@2.1.34(express@5.2.1)':
     dependencies:
-      '@clerk/backend': 3.8.5
-      '@clerk/shared': 4.22.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@clerk/backend': 3.9.0
+      '@clerk/shared': 4.23.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       express: 5.2.1
       tslib: 2.8.1
     transitivePeerDependencies:
       - react
       - react-dom
 
-  '@clerk/react@6.11.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@clerk/react@6.11.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
-      '@clerk/shared': 4.22.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@clerk/shared': 4.23.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
       tslib: 2.8.1
@@ -3652,7 +3652,7 @@ snapshots:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
 
-  '@clerk/shared@4.22.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@clerk/shared@4.23.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@tanstack/query-core': 5.101.2
       dequal: 2.0.3
@@ -4841,7 +4841,7 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.10.40
       caniuse-lite: 1.0.30001800
-      electron-to-chromium: 1.5.382
+      electron-to-chromium: 1.5.383
       node-releases: 2.0.50
       update-browserslist-db: 1.2.3(browserslist@4.28.4)
 
@@ -5017,7 +5017,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  electron-to-chromium@1.5.382: {}
+  electron-to-chromium@1.5.383: {}
 
   embla-carousel-react@8.6.0(react@19.1.0):
     dependencies:
@@ -5176,9 +5176,9 @@ snapshots:
 
   forwarded@0.2.0: {}
 
-  framer-motion@12.42.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  framer-motion@12.42.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
-      motion-dom: 12.42.1
+      motion-dom: 12.42.2
       motion-utils: 12.39.0
       tslib: 2.8.1
     optionalDependencies:
@@ -5411,7 +5411,7 @@ snapshots:
 
   modern-screenshot@4.7.0: {}
 
-  motion-dom@12.42.1:
+  motion-dom@12.42.2:
     dependencies:
       motion-utils: 12.39.0
 
